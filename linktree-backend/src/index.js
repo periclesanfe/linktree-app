@@ -8,6 +8,7 @@ const linkRoutes = require('./routes/links');
 const redirectRoutes = require('./routes/redirect');
 const analyticsRoutes = require('./routes/analytics');
 const socialIconRoutes = require('./routes/socialIcons');
+const profileRoutes = require('./routes/profile');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/r', redirectRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/socials', socialIconRoutes);
+app.use('/api/profile', profileRoutes); 
 
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);

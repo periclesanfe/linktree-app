@@ -84,3 +84,34 @@ exports.deleteLink = async (req, res) => {
         res.status(500).send('Erro no servidor');
     }
 };
+
+exports.uploadLinkCoverImage = async (req, res) => {
+    const { linkId } = req.params;
+    const userId = req.user.id;
+
+    if (!req.file) {
+        return res.status(400).json({ msg: 'Nenhum arquivo enviado.' });
+    }
+
+    try {
+        const linkResult = await pool.query("SELECT * FROM links WHERE id = $1 AND user_id = $2", [linkId, userId]);
+        if (linkResult.rows.length === 0) {
+            return res.status(404).json({ msg: 'Link não encontrado ou você não tem permissão.' });
+        }
+        
+        const mimeType = req.file.mimetype;
+        const base64Data = req.file.buffer.toString('base64');
+        const dataUrl = `data:${mimeType};base64,${base64Data}`;
+
+        const updatedLink = await pool.query(
+            "UPDATE links SET cover_image_url = $1 WHERE id = $2 RETURNING *",
+            [dataUrl, linkId]
+        );
+
+        res.json(updatedLink.rows[0]);
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Erro no servidor ao salvar a imagem do link.');
+    }
+};

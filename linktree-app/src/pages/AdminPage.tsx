@@ -11,6 +11,7 @@ interface Link {
   id: string;
   title: string;
   url: string;
+  cover_image_url?: string | null;
 }
 
 interface User {
@@ -63,6 +64,25 @@ const AdminPage = () => {
       setSelectedFile(event.target.files[0]);
     }
   };
+
+    const handleCoverImageUpload = async (linkId: string, file: File) => {
+        const formData = new FormData();
+        formData.append('coverImage', file);
+
+        try {
+            // CORREÇÃO: Mude de .put para .post para corresponder à rota
+            const response = await apiClient.post(`/links/${linkId}/cover-image`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            // Atualiza a lista de links com a nova URL da imagem
+            setLinks(links.map(link => link.id === linkId ? response.data : link));
+            alert('Imagem de capa atualizada com sucesso!');
+        } catch (error) {
+            console.error('Erro ao fazer upload da capa:', error);
+            alert('Falha no upload da capa.');
+        }
+    };
 
   const handleImageUpload = async () => {
     if (!selectedFile) return;
@@ -170,10 +190,17 @@ const AdminPage = () => {
             Adicionar Novo Link
           </button>
         </div>
-        <div className="space-y-4">
+       <div className="space-y-4">
           {links.length > 0 ? (
             links.map((link) => (
-              <LinkCard key={link.id} link={link} onEdit={handleOpenModalForEdit} onDelete={handleDeleteLink} />
+              <LinkCard 
+                key={link.id} 
+                link={link} 
+                onEdit={handleOpenModalForEdit}
+                onDelete={handleDeleteLink}
+                // Passa a nova função para o LinkCard
+                onCoverImageUpload={handleCoverImageUpload}
+              />
             ))
           ) : (
             <p className="text-center text-gray-500 py-4">Você ainda não adicionou nenhum link.</p>

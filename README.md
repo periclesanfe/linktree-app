@@ -6,19 +6,21 @@ O ambiente de desenvolvimento é totalmente containerizado usando Docker e VS Co
 
 ## ✨ Funcionalidades
 
-- 🔐 **Autenticação de Usuários:** Sistema de registro e login com tokens JWT.
-- 🔗 **Gerenciamento de Links (CRUD):** Usuários logados podem criar, visualizar, atualizar e deletar seus links.
-- 🎨 **Personalização:** Usuários podem definir uma foto de perfil.
-- 📈 **Análise de Cliques:** Rota de redirecionamento que contabiliza os cliques em cada link.
-- 🖼️ **Upload de Imagens:** Funcionalidade para upload da foto de perfil (armazenada como Base64 no banco de dados para o ambiente de desenvolvimento).
+- 🔐 **Autenticação Completa:** Sistema de registro e login com tokens JWT, com rotas protegidas para gerenciamento.
+- 👤 **Página de Perfil Pública:** Cada usuário possui uma página `/:username` customizável e acessível publicamente.
+- 🔗 **Gerenciamento de Links (CRUD):** Usuários logados têm um painel administrativo para criar, visualizar, atualizar e deletar seus links.
+- 🎨 **Personalização de Perfil e Links:** Funcionalidade de upload de imagem de perfil e de capas para cada link.
+- 📈 **Análise de Cliques:** Um sistema de redirecionamento que contabiliza os cliques em cada link, com uma API para consultar as estatísticas.
+- 📱 **Interface Reativa:** Frontend construído em React com Vite, TypeScript e Tailwind CSS, oferecendo uma experiência de usuário moderna e interativa.
 
 ## 🚀 Tecnologias Utilizadas
 
-- **Frontend:** React, Vite, TypeScript, Tailwind CSS
+- **Frontend:** React, Vite, TypeScript, Tailwind CSS, React Router, Axios
 - **Backend:** Node.js, Express.js
 - **Banco de Dados:** PostgreSQL
 - **Infraestrutura e DevOps:** Docker, Docker Compose, VS Code Dev Containers
 - **Autenticação:** JWT (JSON Web Tokens), bcryptjs
+- **Upload de Arquivos:** Multer
 
 ## 📋 Pré-requisitos
 
@@ -34,6 +36,7 @@ Para executar este projeto, você precisará ter as seguintes ferramentas instal
 Siga estes passos para configurar e executar o ambiente de desenvolvimento.
 
 ### 1. Clonar o Repositório
+
 ```bash
 git clone <URL_DO_SEU_REPOSITORIO>
 cd <nome-do-repositorio>
@@ -74,6 +77,14 @@ O comando acima executa o `docker-compose up` automaticamente. Ao final do proce
 
 Você pode se conectar ao Banco de Dados usando uma extensão do VS Code com os dados do seu `.env` e o host `database`.
 
+## 🕹️ Páginas da Aplicação Frontend
+
+A interface do usuário é dividida nas seguintes rotas principais:
+
+- `/login`: Página de login para acessar o painel de administração.
+- `/admin`: Painel privado onde o usuário logado pode gerenciar seu perfil, links e imagens.
+- `/:username`: A página de perfil pública de um usuário, visível para todos os visitantes.
+
 ## 📚 Documentação da API
 
 Todas as rotas, exceto registro, login e redirecionamento, são protegidas e exigem um token JWT no cabeçalho: `x-auth-token`.
@@ -88,12 +99,13 @@ Todas as rotas, exceto registro, login e redirecionamento, são protegidas e exi
 
 ### Links (`/api/links`)
 
-| Método | Endpoint | Protegida? | Descrição                | Corpo (JSON)                                  |
-|--------|----------|------------|--------------------------|------------------------------------------------|
-| POST   | /        | Sim        | Cria um novo link para o usuário. | `{ "title": "...", "url": "..." }` |
-| GET    | /        | Sim        | Lista todos os links do usuário. | N/A                                           |
-| PUT    | /:id     | Sim        | Atualiza um link específico.      | `{ "title": "...", "url": "..." }` (campos opcionais) |
-| DELETE | /:id     | Sim        | Deleta um link específico.       | N/A                                           |
+| Método | Endpoint              | Protegida? | Descrição                          | Corpo (JSON)                                  |
+|--------|-----------------------|------------|------------------------------------|------------------------------------------------|
+| POST   | /                     | Sim        | Cria um novo link para o usuário.  | `{ "title": "...", "url": "..." }` |
+| GET    | /                     | Sim        | Lista todos os links do usuário.   | N/A                                           |
+| PUT    | /:id                  | Sim        | Atualiza um link específico.       | `{ "title": "...", "url": "..." }` (campos opcionais) |
+| DELETE | /:id                  | Sim        | Deleta um link específico.         | N/A                                           |
+| POST   | /:linkId/cover-image  | Sim        | Faz o upload da imagem de capa.    | Multipart: Campo coverImage do tipo File       |
 
 ### Uploads (`/api/users`)
 
