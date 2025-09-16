@@ -7,18 +7,37 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
+# Diretórios de dependências
+node_modules/
+
+# Diretórios de build e cache
+dist/
 dist-ssr
+.cache/
+coverage/
+
+# Arquivos locais e temporários
 *.local
+.DS_Store
 
 # Editor directories and files
-.vscode/*
+.vscode/
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Arquivos de ambiente - NUNCA ENVIE SENHAS PARA O GITHUB
+.env
+.env*.local
+.env.*.local
+
+# Arquivos gerados pelo Docker e Dev Container
+docker-compose.override.yml
+.dockerignore
+postgres-data/
+minio-data/
+.devcontainer/

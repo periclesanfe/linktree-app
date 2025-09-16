@@ -1,0 +1,22 @@
+# Dockerfile.dev
+
+# Use o mesmo base image do Dockerfile normal
+FROM node:22-alpine
+
+# Diretório de trabalho
+WORKDIR /app
+
+# Copie apenas os arquivos de dependências para instalar mais rápido
+COPY package*.json ./
+
+# Instale as dependências (incluindo devDependencies)
+RUN npm install
+
+# Copie o restante do código
+COPY . .
+
+# Exponha a porta padrão (ajuste conforme necessário)
+EXPOSE 3000
+
+# Use o comando de desenvolvimento (hot reload)
+CMD ["npm", "run", "dev"]
