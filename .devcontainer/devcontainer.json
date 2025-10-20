@@ -1,0 +1,26 @@
+{
+    "name": "Linktree App Dev Container",
+    "dockerComposeFile": [
+        "../docker-compose.yml"
+    ],
+    // O serviço do docker-compose que será o seu ambiente principal.
+    // Vamos desenvolver "dentro" do container do backend.
+    "service": "backend",
+    // A pasta que será aberta no VS Code dentro do container.
+    "workspaceFolder": "/app",
+    // Desliga o container quando o VS Code for fechado.
+    "shutdownAction": "stopCompose",
+    // Recomendações de extensões do VS Code para instalar DENTRO do container.
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "eamodio.gitlens",
+                "humao.rest-client",
+                "ms-azuretools.vscode-docker",
+                "cweijan.vscode-postgresql-client2"
+            ]
+        }
+    }
+}
