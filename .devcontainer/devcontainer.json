@@ -3,14 +3,13 @@
     "dockerComposeFile": [
         "../docker-compose.yml"
     ],
-    // O serviço do docker-compose que será o seu ambiente principal.
-    // Vamos desenvolver "dentro" do container do backend.
+
     "service": "backend",
-    // A pasta que será aberta no VS Code dentro do container.
+
     "workspaceFolder": "/app",
-    // Desliga o container quando o VS Code for fechado.
+
     "shutdownAction": "stopCompose",
-    // Recomendações de extensões do VS Code para instalar DENTRO do container.
+
     "customizations": {
         "vscode": {
             "extensions": [
@@ -22,5 +21,15 @@
                 "cweijan.vscode-postgresql-client2"
             ]
         }
-    }
+    },
+
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "18"
+        }
+    },
+ 
+    "forwardPorts": [3000, 8000],
+
+    "postCreateCommand": "npm install || true"
 }
