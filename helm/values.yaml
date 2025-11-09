@@ -1,0 +1,135 @@
+# Default values for linktree.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Environment (dev, staging, prod)
+environment: production
+
+# Backend configuration
+backend:
+  replicaCount: 2
+  
+  image:
+    repository: ghcr.io/periclesanfe/linktree-backend
+    pullPolicy: IfNotPresent
+    tag: ""  # Defaults to chart appVersion if not set
+    pullSecrets: []
+    # - name: ghcr-secret
+  
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+    nodePort: null
+  
+  # CORS origin for the backend
+  corsOrigin: "*"
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Frontend configuration
+frontend:
+  replicaCount: 2
+  
+  image:
+    repository: ghcr.io/periclesanfe/linktree-frontend
+    pullPolicy: IfNotPresent
+    tag: ""  # Defaults to chart appVersion if not set
+    pullSecrets: []
+    # - name: ghcr-secret
+  
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+    nodePort: null
+  
+  # API URL that the frontend will use
+  apiUrl: "http://localhost:8000"
+  
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Database configuration
+database:
+  # Use external database (CloudNativePG operator) or internal
+  external: true
+  
+  # Database connection details
+  host: "linktree-postgresql"
+  port: "5432"
+  database: "linktree_db"
+  user: "linktree_user"
+  password: "CHANGE_ME_IN_VALUES_FILES"
+  
+  # Database migration job
+  migration:
+    enabled: true
+    
+    image:
+      repository: postgres
+      tag: "16-alpine"
+      pullPolicy: IfNotPresent
+      pullSecrets: []
+    
+    # Time to keep the job after completion (in seconds)
+    ttlSecondsAfterFinished: 300
+    
+    # Number of retries before considering job as failed
+    backoffLimit: 3
+    
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+# Authentication configuration
+auth:
+  jwtSecret: "change-me-in-production"
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: linktree.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend: frontend
+        - path: /api
+          pathType: Prefix
+          backend: backend
+  tls: []
+  #  - secretName: linktree-tls
+  #    hosts:
+  #      - linktree.example.com
+
+# Override names
+nameOverride: ""
+fullnameOverride: ""

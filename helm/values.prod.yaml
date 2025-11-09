@@ -1,0 +1,95 @@
+# Production environment values for linktree.
+# This file overrides values.yaml for the prod environment.
+
+environment: production
+
+# Backend configuration for prod
+backend:
+  replicaCount: 3
+  
+  image:
+    repository: ghcr.io/periclesanfe/linktree-backend
+    pullPolicy: IfNotPresent
+    tag: "v1.0.0"  # Will be updated by CI/CD pipeline with commit SHA
+  
+  service:
+    type: ClusterIP
+    port: 8000
+  
+  corsOrigin: "https://linktree.example.com"
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# Frontend configuration for prod
+frontend:
+  replicaCount: 3
+  
+  image:
+    repository: ghcr.io/periclesanfe/linktree-frontend
+    pullPolicy: IfNotPresent
+    tag: "v1.0.0"  # Will be updated by CI/CD pipeline with commit SHA
+  
+  service:
+    type: ClusterIP
+    port: 80
+  
+  apiUrl: "https://linktree.example.com/api"
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Database configuration for prod
+database:
+  external: true
+  host: "linktree-prod-postgresql"
+  port: "5432"
+  database: "linktree_prod"
+  user: "linktree_prod_user"
+  password: "REPLACE_WITH_SECURE_PASSWORD"  # TODO: Move to sealed secret or external secret
+  
+  migration:
+    enabled: true
+    resources:
+      limits:
+        cpu: 300m
+        memory: 384Mi
+      requests:
+        cpu: 150m
+        memory: 192Mi
+
+# Authentication for prod
+auth:
+  jwtSecret: "REPLACE_WITH_SECURE_JWT_SECRET"  # TODO: Move to sealed secret or external secret
+
+# Ingress for prod
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+  hosts:
+    - host: linktree.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend: frontend
+        - path: /api
+          pathType: Prefix
+          backend: backend
+  tls:
+    - secretName: linktree-tls
+      hosts:
+        - linktree.example.com

@@ -1,0 +1,12 @@
+apiVersion: v2
+name: linktree
+description: A Helm chart for Linktree application
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - linktree
+  - links
+  - profile
+maintainers:
+  - name: periclesanfe

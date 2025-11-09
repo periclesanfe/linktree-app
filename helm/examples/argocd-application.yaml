@@ -1,0 +1,114 @@
+# Este arquivo é um exemplo de como configurar o ArgoCD para fazer deploy
+# Este arquivo NÃO deve ser aplicado diretamente neste repositório
+# Ele deve ser colocado no repositório GitOps (argocd-gitops)
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: linktree-dev
+  namespace: argocd
+  # Finalizers garantem que os recursos sejam limpos quando a app for deletada
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Projeto do ArgoCD (use 'default' ou crie um projeto específico)
+  project: default
+  
+  # Source: de onde vem o código
+  source:
+    # URL do repositório Git
+    repoURL: https://github.com/periclesanfe/linktree
+    # Branch, tag ou commit
+    targetRevision: main
+    # Path do Helm Chart dentro do repo
+    path: helm
+    # Configurações do Helm
+    helm:
+      # Arquivos de valores a serem usados (em ordem)
+      valueFiles:
+        - values.dev.yaml
+      # Parâmetros adicionais (opcional)
+      # parameters:
+      #   - name: backend.image.tag
+      #     value: "sha-abc123"
+  
+  # Destination: onde será feito o deploy
+  destination:
+    # URL do cluster (use https://kubernetes.default.svc para cluster local)
+    server: https://kubernetes.default.svc
+    # Namespace de destino
+    namespace: dev
+  
+  # Sync Policy: como e quando sincronizar
+  syncPolicy:
+    # Sync automático
+    automated:
+      # Prune: remove recursos que não estão mais no Git
+      prune: true
+      # Self Heal: reverte mudanças manuais no cluster
+      selfHeal: true
+      # Permite apps vazias serem criadas
+      allowEmpty: false
+    
+    # Opções de sincronização
+    syncOptions:
+      # Cria o namespace se não existir
+      - CreateNamespace=true
+      # Valida recursos antes de aplicar
+      - Validate=true
+      # Usa server-side apply
+      - ServerSideApply=false
+    
+    # Retry: configuração de retry em caso de falha
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  # Configurações de ignorar diferenças (opcional)
+  ignoreDifferences:
+    # Ignora diferenças em replicas se HPA estiver gerenciando
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: linktree-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/periclesanfe/linktree
+    targetRevision: main
+    path: helm
+    helm:
+      valueFiles:
+        - values.prod.yaml
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: prod
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - Validate=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

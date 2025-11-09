@@ -1,0 +1,247 @@
+name: GitOps CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'linktree-backend/**'
+      - 'linktree-app/**'
+      - 'helm/**'
+      - '.github/workflows/gitops-cicd.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  REGISTRY: ghcr.io
+  GITOPS_REPO: periclesanfe/argocd-gitops
+  GITOPS_BRANCH: main
+
+jobs:
+  # Validar Helm Chart
+  helm-validate:
+    name: Validate Helm Chart
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: '3.13.0'
+      
+      - name: Lint Helm chart
+        run: |
+          helm lint ./helm
+          helm lint ./helm -f ./helm/values.dev.yaml
+          helm lint ./helm/values.prod.yaml
+      
+      - name: Template Helm chart (dev)
+        run: |
+          helm template linktree-dev ./helm -f ./helm/values.dev.yaml > /tmp/rendered-dev.yaml
+          echo "✅ Dev templates rendered successfully"
+      
+      - name: Template Helm chart (prod)
+        run: |
+          helm template linktree-prod ./helm -f ./helm/values.prod.yaml > /tmp/rendered-prod.yaml
+          echo "✅ Prod templates rendered successfully"
+
+  # Build e Push Backend
+  build-backend:
+    name: Build and Push Backend
+    runs-on: ubuntu-latest
+    needs: helm-validate
+    permissions:
+      contents: read
+      packages: write
+    
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      short-sha: ${{ steps.vars.outputs.short-sha }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up variables
+        id: vars
+        run: |
+          echo "short-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "date=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/linktree-backend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=${{ steps.vars.outputs.short-sha }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+      
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./linktree-backend
+          file: ./linktree-backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Build e Push Frontend
+  build-frontend:
+    name: Build and Push Frontend
+    runs-on: ubuntu-latest
+    needs: helm-validate
+    permissions:
+      contents: read
+      packages: write
+    
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      short-sha: ${{ steps.vars.outputs.short-sha }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up variables
+        id: vars
+        run: |
+          echo "short-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/linktree-frontend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=${{ steps.vars.outputs.short-sha }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+      
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./linktree-app
+          file: ./linktree-app/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Atualizar GitOps Repository
+  update-gitops:
+    name: Update GitOps Repository
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "app-name=linktree-prod" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "app-name=linktree-dev" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Checkout GitOps repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITOPS_REPO }}
+          token: ${{ secrets.GITOPS_PAT }}
+          ref: ${{ env.GITOPS_BRANCH }}
+      
+      - name: Setup yq
+        uses: mikefarah/yq@master
+      
+      - name: Get short SHA
+        id: sha
+        run: echo "short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+      
+      - name: Update image tags in Application
+        run: |
+          APP_FILE="environments/${{ steps.env.outputs.environment }}/application.yaml"
+          
+          if [ -f "$APP_FILE" ]; then
+            # Atualizar parâmetros de imagem no Application do ArgoCD
+            yq eval -i '
+              .spec.source.helm.parameters = [
+                {"name": "backend.image.tag", "value": "${{ steps.sha.outputs.short }}"},
+                {"name": "frontend.image.tag", "value": "${{ steps.sha.outputs.short }}"}
+              ]
+            ' "$APP_FILE"
+            
+            echo "✅ Updated $APP_FILE"
+            cat "$APP_FILE"
+          else
+            echo "⚠️ Application file not found: $APP_FILE"
+            echo "Creating application with image tags..."
+          fi
+      
+      - name: Commit and push changes
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add .
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore(${{ steps.env.outputs.environment }}): update images to ${{ steps.sha.outputs.short }} [skip ci]
+            
+            Triggered by: ${{ github.event.head_commit.message }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.event.head_commit.author.name }}"
+            
+            git push origin ${{ env.GITOPS_BRANCH }}
+            echo "✅ Changes pushed to GitOps repository"
+          fi
+      
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ steps.env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** \`${{ steps.sha.outputs.short }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Backend Image:** \`ghcr.io/${{ github.repository_owner }}/linktree-backend:${{ steps.sha.outputs.short }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Frontend Image:** \`ghcr.io/${{ github.repository_owner }}/linktree-frontend:${{ steps.sha.outputs.short }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "ArgoCD will sync automatically 🎯" >> $GITHUB_STEP_SUMMARY

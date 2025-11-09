@@ -40,3 +40,14 @@ docker-compose.override.yml
 .dockerignore
 postgres-data/
 minio-data/
+
+# Helm Chart - Ignore sensitive files
+values-secret.yaml
+values.*.secret.yaml
+*.secret.yaml
+
+# Helm packages
+*.tgz
+
+# Temporary files
+.DS_Store

@@ -1,89 +1,260 @@
-# Projeto Linktree Clone
+# Projeto Linktree Clone - GitOps Edition
 
-Este projeto é uma implementação full-stack de uma aplicação clone do Linktree, desenvolvida como parte da disciplina **[Nome da Disciplina]**. A aplicação permite que usuários se cadastrem, criem uma página de perfil pública e adicionem uma lista de links personalizáveis.
+Este projeto é uma implementação full-stack de uma aplicação clone do Linktree, desenvolvida com as melhores práticas de **DevOps**, **GitOps**, **Kubernetes** e **12-Factor App**.
 
-O ambiente de desenvolvimento é totalmente containerizado usando Docker e VS Code Dev Containers, garantindo uma experiência de setup rápida e consistente.
+A aplicação permite que usuários se cadastrem, criem uma página de perfil pública e adicionem uma lista de links personalizáveis. Todo o deploy é automatizado usando **ArgoCD** e **GitHub Actions**.
 
 ## ✨ Funcionalidades
 
-- 🔐 **Autenticação Completa:** Sistema de registro e login com tokens JWT, com rotas protegidas para gerenciamento.
-- 👤 **Página de Perfil Pública:** Cada usuário possui uma página `/:username` customizável e acessível publicamente.
-- 🔗 **Gerenciamento de Links (CRUD):** Usuários logados têm um painel administrativo para criar, visualizar, atualizar e deletar seus links.
-- 🎨 **Personalização de Perfil e Links:** Funcionalidade de upload de imagem de perfil e de capas para cada link.
-- 📈 **Análise de Cliques:** Um sistema de redirecionamento que contabiliza os cliques em cada link, com uma API para consultar as estatísticas.
-- 📱 **Interface Reativa:** Frontend construído em React com Vite, TypeScript e Tailwind CSS, oferecendo uma experiência de usuário moderna e interativa.
+- 🔐 **Autenticação Completa:** Sistema de registro e login com tokens JWT
+- 👤 **Página de Perfil Pública:** Cada usuário possui uma página `/:username` customizável
+- 🔗 **Gerenciamento de Links (CRUD):** Painel administrativo completo
+- 🎨 **Personalização:** Upload de imagem de perfil e capas para links
+- 📈 **Análise de Cliques:** Sistema de tracking com estatísticas
+- 📱 **Interface Reativa:** React com Vite, TypeScript e Tailwind CSS
 
 ## 🚀 Tecnologias Utilizadas
 
+### Stack de Aplicação
 - **Frontend:** React, Vite, TypeScript, Tailwind CSS, React Router, Axios
-- **Backend:** Node.js, Express.js
-- **Banco de Dados:** PostgreSQL
-- **Infraestrutura e DevOps:** Docker, Docker Compose, VS Code Dev Containers
+- **Backend:** Node.js, Express.js, Winston (structured logging)
+- **Banco de Dados:** PostgreSQL (CloudNativePG operator)
 - **Autenticação:** JWT (JSON Web Tokens), bcryptjs
 - **Upload de Arquivos:** Multer
 
+### DevOps & Infraestrutura
+- **Containers:** Docker, Docker Compose
+- **Orquestração:** Kubernetes
+- **GitOps:** ArgoCD
+- **Package Management:** Helm 3
+- **CI/CD:** GitHub Actions
+- **Registry:** GitHub Container Registry (ghcr.io)
+- **Logging:** Winston + Morgan (structured logs)
+- **Security:** Helmet, CORS, Rate Limiting
+
 ## 📋 Pré-requisitos
 
-Para executar este projeto, você precisará ter as seguintes ferramentas instaladas:
-
+### Para Desenvolvimento Local
 - [Git](https://git-scm.com/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [Visual Studio Code](https://code.visualstudio.com/)
-- A extensão [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) da Microsoft no VS Code.
+- [Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
-## ⚙️ Começando (Setup Local)
+### Para Deploy em Kubernetes
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) - Cliente Kubernetes
+- [Helm 3+](https://helm.sh/docs/intro/install/) - Gerenciador de pacotes
+- [ArgoCD CLI](https://argo-cd.readthedocs.io/en/stable/cli_installation/) - Cliente ArgoCD
+- Acesso a um cluster Kubernetes (minikube, kind, GKE, EKS, AKS)
 
-Siga estes passos para configurar e executar o ambiente de desenvolvimento.
+## ⚙️ Setup e Deploy
 
-### 1. Clonar o Repositório
+### 🏠 Desenvolvimento Local (Docker Compose)
 
 ```bash
-git clone <URL_DO_SEU_REPOSITORIO>
-cd <nome-do-repositorio>
-```
+# 1. Clonar repositório
+git clone https://github.com/periclesanfe/linktree.git
+cd linktree
 
-### 2. Configurar Variáveis de Ambiente
-
-Crie um arquivo chamado `.env` na raiz do projeto. Este arquivo não será enviado para o GitHub e conterá suas senhas e segredos.
-
-Copie e cole o conteúdo abaixo no seu arquivo `.env`:
-
-```env
-# Credenciais para o Banco de Dados PostgreSQL
+# 2. Criar arquivo .env
+cat > .env << EOF
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=suasenhaforte # Troque por uma senha segura
+POSTGRES_PASSWORD=suasenhaforte
 POSTGRES_DB=linktree_db
+JWT_SECRET=segredo_jwt_super_secreto_e_aleatorio
+CORS_ORIGIN=http://localhost:5173
+EOF
 
-# Segredo para a Autenticação JWT
-JWT_SECRET=segredo_jwt_super_secreto_e_aleatorio # Troque por uma string aleatória longa
+# 3. Abrir no Dev Container
+# VS Code → Cmd+Shift+P → "Dev Containers: Reopen in Container"
+
+# 4. Acessar aplicação
+# Frontend: http://localhost:5173
+# Backend: http://localhost:3000
 ```
 
-### 3. Abrir no Dev Container
+### ☸️ Deploy em Kubernetes (GitOps)
 
-Abra a pasta raiz do projeto no VS Code.
+Para deploy em produção usando GitOps, consulte a documentação completa:
 
-Abra a Paleta de Comandos (`Cmd+Shift+P` no Mac, `Ctrl+Shift+P` no Windows).
+- **[Guia de Setup GitOps](docs/GITOPS_SETUP.md)** - Setup completo do zero
+- **[Guia de Deployment](docs/DEPLOYMENT.md)** - Processo de deploy e troubleshooting
+- **[Helm Chart README](helm/README.md)** - Documentação do Helm Chart
 
-Procure e execute o comando: `Dev Containers: Reopen in Container`.
+**Quick Start:**
 
-Aguarde o VS Code construir e iniciar os contêineres. Isso pode levar alguns minutos na primeira vez.
+```bash
+# 1. Criar repositório GitOps
+git clone https://github.com/periclesanfe/argocd-gitops.git
+cd argocd-gitops
+cp -r ../linktree/docs/gitops-templates/* .
 
-### 4. A Aplicação está no Ar!
+# 2. Instalar CloudNativePG
+kubectl apply -f operators/cloudnative-pg.yaml
 
-O comando acima executa o `docker-compose up` automaticamente. Ao final do processo:
+# 3. Instalar ArgoCD
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-- O Frontend estará acessível em: http://localhost:5173
-- A API Backend estará acessível em: http://localhost:3000
+# 4. Criar aplicações
+kubectl apply -f environments/prod/application.yaml
 
-Você pode se conectar ao Banco de Dados usando uma extensão do VS Code com os dados do seu `.env` e o host `database`.
+# 5. Sincronizar
+argocd app sync linktree-prod
+```
 
-## 🕹️ Páginas da Aplicação Frontend
+Para instruções detalhadas, veja [GITOPS_SETUP.md](docs/GITOPS_SETUP.md).
+
+## 📁 Estrutura do Projeto
+
+```
+linktree/
+├── .github/
+│   └── workflows/
+│       └── gitops-cicd.yml        # Pipeline CI/CD GitOps
+├── docs/
+│   ├── DEPLOYMENT.md              # Guia de deployment
+│   ├── GITOPS_SETUP.md            # Setup GitOps completo
+│   └── gitops-templates/          # Templates para repo GitOps
+├── helm/                          # Helm Chart
+│   ├── Chart.yaml
+│   ├── values.yaml                # Valores padrão
+│   ├── values.dev.yaml            # Valores de dev
+│   ├── values.prod.yaml           # Valores de prod
+│   ├── templates/                 # Manifests Kubernetes
+│   └── README.md
+├── linktree-backend/              # API Node.js
+│   ├── src/
+│   │   ├── index.js               # Server principal
+│   │   ├── utils/
+│   │   │   └── logger.js          # Winston logger
+│   │   ├── middleware/
+│   │   │   ├── httpLogger.js      # Morgan HTTP logging
+│   │   │   └── errorHandler.js    # Error handling
+│   │   ├── routes/
+│   │   └── controllers/
+│   ├── Dockerfile
+│   └── package.json
+├── linktree-app/                  # Frontend React
+│   ├── src/
+│   ├── Dockerfile
+│   └── package.json
+├── db-init/
+│   └── init.sql                   # Database schema
+├── scripts/
+│   └── helm-helper.sh             # Helper para Helm
+└── docker-compose.yml             # Desenvolvimento local
+```
+
+## � GitOps Workflow
+
+### Fluxo de Deploy Automatizado
+
+```
+Developer Push → GitHub Actions → Build Images → Update GitOps Repo → ArgoCD Sync → Kubernetes Deploy
+```
+
+1. **Developer** faz push no repo `linktree`
+2. **GitHub Actions** constrói imagens Docker e faz push para ghcr.io
+3. **GitHub Actions** atualiza repo `argocd-gitops` com nova tag de imagem
+4. **ArgoCD** detecta mudança no Git
+5. **ArgoCD** sincroniza com Kubernetes
+6. **Kubernetes** faz rolling update (zero downtime)
+
+### CI/CD Pipeline
+
+O workflow `.github/workflows/gitops-cicd.yml` executa:
+
+- ✅ Lint e validação do Helm Chart
+- 🏗️ Build de imagens Docker (backend e frontend)
+- 📦 Push para GitHub Container Registry
+- 🔄 Atualização automática do repositório GitOps
+- 📊 Summary do deployment
+
+## 🧪 Testando a Aplicação
+
+### Desenvolvimento Local
+
+```bash
+# Abrir no Dev Container e acessar:
+# Frontend: http://localhost:5173
+# Backend API: http://localhost:3000/api
+# Health Check: http://localhost:3000/api/health
+```
+
+### Kubernetes
+
+```bash
+# Port-forward frontend
+kubectl port-forward -n prod svc/linktree-prod-frontend 3000:80
+
+# Port-forward backend
+kubectl port-forward -n prod svc/linktree-prod-backend 8000:8000
+
+# Testar health check
+curl http://localhost:8000/api/health
+```
+
+## 📊 Logs Estruturados
+
+O backend usa **Winston** para logs estruturados em JSON (produção):
+
+```json
+{
+  "level": "info",
+  "message": "HTTP Request",
+  "method": "GET",
+  "url": "/api/links",
+  "statusCode": 200,
+  "responseTime": "45ms",
+  "timestamp": "2024-11-08T10:30:00.000Z"
+}
+```
+
+```bash
+# Ver logs em desenvolvimento (coloridos)
+npm run dev
+
+# Ver logs em produção (JSON)
+NODE_ENV=production npm start
+
+# Em Kubernetes, filtrar logs
+kubectl logs deploy/linktree-prod-backend -n prod | jq 'select(.level=="error")'
+```
+
+## 🛠️ Scripts Úteis
+
+### Helm Helper
+
+```bash
+# Validar Helm Chart
+./scripts/helm-helper.sh lint
+
+# Ver templates renderizados
+./scripts/helm-helper.sh template prod
+
+# Dry-run de instalação
+./scripts/helm-helper.sh dry-run dev
+
+# Instalar no cluster
+./scripts/helm-helper.sh install dev
+
+# Ver status
+./scripts/helm-helper.sh status prod
+
+# Port-forward
+./scripts/helm-helper.sh port-forward dev
+
+# Ver logs
+./scripts/helm-helper.sh logs prod backend
+```
+
+## �🕹️ Páginas da Aplicação Frontend
 
 A interface do usuário é dividida nas seguintes rotas principais:
 
-- `/login`: Página de login para acessar o painel de administração.
-- `/admin`: Painel privado onde o usuário logado pode gerenciar seu perfil, links e imagens.
-- `/:username`: A página de perfil pública de um usuário, visível para todos os visitantes.
+- `/login`: Página de login para acessar o painel de administração
+- `/admin`: Painel privado onde o usuário logado pode gerenciar seu perfil, links e imagens
+- `/:username`: A página de perfil pública de um usuário, visível para todos os visitantes
 
 ## 📚 Documentação da API
 
@@ -119,3 +290,149 @@ Todas as rotas, exceto registro, login e redirecionamento, são protegidas e exi
 |--------|---------------------------|------------|------------------------------------------------|
 | GET    | /r/:linkId                | Não        | Registra um clique e redireciona para a URL final. |
 | GET    | /api/analytics/:linkId    | Sim        | Retorna as estatísticas de clique para um link. |
+
+## 🏛️ Arquitetura
+
+### Componentes
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         USUÁRIO                              │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+                  ▼
+         ┌────────────────┐
+         │     Ingress    │  (nginx)
+         └────────┬───────┘
+                  │
+         ┌────────┴────────┐
+         │                 │
+         ▼                 ▼
+  ┌──────────┐      ┌──────────┐
+  │ Frontend │      │ Backend  │  (Node.js + Express)
+  │ (React)  │      │ (3 pods) │
+  └──────────┘      └────┬─────┘
+                         │
+                         ▼
+                  ┌──────────────┐
+                  │  PostgreSQL  │  (CloudNativePG)
+                  │  (3 replicas)│
+                  └──────────────┘
+```
+
+### GitOps Flow
+
+```
+┌──────────────┐      ┌─────────────────┐      ┌──────────────┐
+│   linktree   │──────│ GitHub Actions  │──────│   ghcr.io    │
+│ (app code)   │ push │ (build images)  │ push │  (registry)  │
+└──────────────┘      └────────┬────────┘      └──────────────┘
+                               │
+                               │ update tags
+                               ▼
+                      ┌─────────────────┐
+                      │ argocd-gitops   │
+                      │ (config repo)   │
+                      └────────┬────────┘
+                               │
+                               │ detect
+                               ▼
+                      ┌─────────────────┐       ┌──────────────┐
+                      │     ArgoCD      │──────▶│  Kubernetes  │
+                      │  (sync engine)  │ apply │   Cluster    │
+                      └─────────────────┘       └──────────────┘
+```
+
+## 🔐 Segurança e Boas Práticas
+
+### Implementações de Segurança
+
+- ✅ **Helmet**: Headers de segurança HTTP
+- ✅ **CORS**: Configuração restrita de origens
+- ✅ **Rate Limiting**: Proteção contra abuso
+- ✅ **JWT**: Tokens com expiração
+- ✅ **bcryptjs**: Hash seguro de senhas
+- ✅ **Environment Variables**: Secrets via ConfigMap/Secret
+- ✅ **Structured Logging**: Winston com níveis apropriados
+- ✅ **Error Handling**: Middleware centralizado de erros
+- ✅ **Health Checks**: Liveness e Readiness probes
+
+### 12-Factor App Compliance
+
+| Fator | Implementação |
+|-------|---------------|
+| I. Codebase | ✅ Git (único repo, múltiplos deploys) |
+| II. Dependencies | ✅ package.json + Docker |
+| III. Config | ✅ Environment variables (.env, ConfigMap) |
+| IV. Backing Services | ✅ PostgreSQL como serviço externo |
+| V. Build, Release, Run | ✅ GitHub Actions → ArgoCD → K8s |
+| VI. Processes | ✅ Stateless (sessão via JWT) |
+| VII. Port Binding | ✅ Express self-contained |
+| VIII. Concurrency | ✅ Horizontal scaling (K8s replicas) |
+| IX. Disposability | ✅ Graceful shutdown (SIGTERM) |
+| X. Dev/Prod Parity | ✅ Docker + Helm values.{env}.yaml |
+| XI. Logs | ✅ Winston structured logging |
+| XII. Admin Processes | ✅ Migration jobs |
+
+## 🚨 Monitoramento e Observabilidade
+
+### Health Checks
+
+```bash
+# Backend health endpoint
+curl http://localhost:8000/api/health
+
+# Resposta:
+{
+  "status": "healthy",
+  "timestamp": "2024-11-08T10:30:00.000Z",
+  "uptime": 3600,
+  "environment": "production"
+}
+```
+
+### Logs
+
+```bash
+# Ver logs em tempo real
+kubectl logs -f deployment/linktree-prod-backend -n prod
+
+# Filtrar por erro
+kubectl logs deployment/linktree-prod-backend -n prod | grep ERROR
+
+# Filtrar por nível (JSON logs)
+kubectl logs deployment/linktree-prod-backend -n prod | jq 'select(.level=="error")'
+```
+
+## 🤝 Contribuindo
+
+1. Fork o projeto
+2. Crie uma branch: `git checkout -b feature/nova-funcionalidade`
+3. Commit suas mudanças: `git commit -m 'feat: adiciona nova funcionalidade'`
+4. Push para a branch: `git push origin feature/nova-funcionalidade`
+5. Abra um Pull Request
+
+## 📚 Documentação Adicional
+
+- [Guia de Setup GitOps](docs/GITOPS_SETUP.md) - Setup completo do zero
+- [Guia de Deployment](docs/DEPLOYMENT.md) - Deploy e troubleshooting
+- [Helm Chart README](helm/README.md) - Documentação do chart
+- [Setup Guide](helm/SETUP_GUIDE.md) - Instalação do Helm
+
+## 📝 Licença
+
+Este projeto é open source e está disponível sob a [MIT License](LICENSE).
+
+## 👥 Autores
+
+- **periclesanfe** - [GitHub](https://github.com/periclesanfe)
+
+## 🙏 Agradecimentos
+
+- Professores e orientadores
+- Comunidade Cloud Native
+- Contribuidores do projeto
+
+---
+
+**Feito com ❤️ e DevOps Best Practices**
