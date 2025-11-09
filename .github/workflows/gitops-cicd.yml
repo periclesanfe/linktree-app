@@ -21,7 +21,6 @@ env:
   GITOPS_BRANCH: main
 
 jobs:
-  # Validar Helm Chart
   helm-validate:
     name: Validate Helm Chart
     runs-on: ubuntu-latest
@@ -39,7 +38,7 @@ jobs:
         run: |
           helm lint ./helm
           helm lint ./helm -f ./helm/values.dev.yaml
-          helm lint ./helm/values.prod.yaml
+          helm lint ./helm -f ./helm/values.prod.yaml
       
       - name: Template Helm chart (dev)
         run: |
@@ -51,7 +50,6 @@ jobs:
           helm template linktree-prod ./helm -f ./helm/values.prod.yaml > /tmp/rendered-prod.yaml
           echo "✅ Prod templates rendered successfully"
 
-  # Build e Push Backend
   build-backend:
     name: Build and Push Backend
     runs-on: ubuntu-latest
@@ -107,7 +105,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Build e Push Frontend
   build-frontend:
     name: Build and Push Frontend
     runs-on: ubuntu-latest
@@ -162,7 +159,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Atualizar GitOps Repository
   update-gitops:
     name: Update GitOps Repository
     runs-on: ubuntu-latest
@@ -189,7 +185,9 @@ jobs:
           ref: ${{ env.GITOPS_BRANCH }}
       
       - name: Setup yq
-        uses: mikefarah/yq@master
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
       
       - name: Get short SHA
         id: sha
@@ -200,7 +198,6 @@ jobs:
           APP_FILE="environments/${{ steps.env.outputs.environment }}/application.yaml"
           
           if [ -f "$APP_FILE" ]; then
-            # Atualizar parâmetros de imagem no Application do ArgoCD
             yq eval -i '
               .spec.source.helm.parameters = [
                 {"name": "backend.image.tag", "value": "${{ steps.sha.outputs.short }}"},
