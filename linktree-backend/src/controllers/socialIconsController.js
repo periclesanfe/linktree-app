@@ -1,5 +1,6 @@
 const pool = require('../db/pool');
 const { validationResult } = require('express-validator');
+const logger = require('../utils/logger');
 
 const VALID_PLATFORMS = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin', 'github', 'whatsapp'];
 
@@ -24,7 +25,13 @@ exports.createSocialIcon = async (req, res) => {
 
         res.status(201).json(newIcon.rows[0]);
     } catch (err) {
-        console.error(err.message);
+        logger.error('Social icons error - createSocialIcon', { 
+            endpoint: 'createSocialIcon',
+            userId: req.user.id,
+            platform: req.body.platform,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -34,7 +41,12 @@ exports.getSocialIcons = async (req, res) => {
         const icons = await pool.query("SELECT * FROM social_icons WHERE user_id = $1", [req.user.id]);
         res.json(icons.rows);
     } catch (err) {
-        console.error(err.message);
+        logger.error('Social icons error - getSocialIcons', { 
+            endpoint: 'getSocialIcons',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -57,7 +69,7 @@ exports.updateSocialIcon = async (req, res) => {
         
         res.json(updatedIcon.rows[0]);
     } catch (err) {
-        console.error(err.message);
+        logger.error('Social icons error - updateSocialIcon', { endpoint: 'updateSocialIcon', userId, iconId, error: err.message, stack: err.stack });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -76,7 +88,7 @@ exports.deleteSocialIcon = async (req, res) => {
         
         res.json({ msg: 'Ícone social removido com sucesso.' });
     } catch (err) {
-        console.error(err.message);
+        logger.error('Social icons error - deleteSocialIcon', { endpoint: 'deleteSocialIcon', userId, iconId, error: err.message, stack: err.stack });
         res.status(500).send('Erro no servidor');
     }
 };

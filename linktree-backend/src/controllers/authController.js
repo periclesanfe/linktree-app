@@ -1,7 +1,8 @@
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const pool = require('../db/pool'); 
+const pool = require('../db/pool');
+const logger = require('../utils/logger'); 
 
 exports.registerUser = async (req, res) => {
     const errors = validationResult(req);
@@ -28,7 +29,12 @@ exports.registerUser = async (req, res) => {
         res.status(201).json({ msg: 'Usuário registrado com sucesso!', user: newUser.rows[0] });
 
     } catch (err) {
-        console.error(err.message);
+        logger.error('Auth error - register', { 
+            endpoint: 'register',
+            email: req.body.email,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -71,7 +77,12 @@ exports.loginUser = async (req, res) => {
         );
 
     } catch (err) {
-        console.error(err.message);
+        logger.error('Auth error - login', { 
+            endpoint: 'login',
+            email: req.body.email,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -85,7 +96,12 @@ exports.getCurrentUser = async (req, res) => {
 
         res.json(user.rows[0]);
     } catch (err) {
-        console.error(err.message);
+        logger.error('Auth error - getCurrentUser', { 
+            endpoint: 'getCurrentUser',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };

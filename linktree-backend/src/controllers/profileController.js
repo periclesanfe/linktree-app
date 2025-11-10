@@ -1,4 +1,5 @@
 const pool = require('../db/pool');
+const logger = require('../utils/logger');
 
 exports.getPublicProfile = async (req, res) => {
     const { username } = req.params;
@@ -30,7 +31,12 @@ exports.getPublicProfile = async (req, res) => {
         res.json(publicProfile);
 
     } catch (err) {
-        console.error(err.message);
+        logger.error('Profile error', { 
+            endpoint: 'getPublicProfile',
+            username: req.params.username,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };

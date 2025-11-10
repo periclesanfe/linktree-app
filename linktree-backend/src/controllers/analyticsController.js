@@ -1,4 +1,5 @@
 const pool = require('../db/pool');
+const logger = require('../utils/logger');
 
 
 exports.recordClickAndRedirect = async (req, res) => {
@@ -17,12 +18,20 @@ exports.recordClickAndRedirect = async (req, res) => {
         pool.query(
             "INSERT INTO analytics_clicks (link_id) VALUES ($1)",
             [linkId]
-        ).catch(err => console.error("Falha ao registrar clique:", err.message)); // Apenas logamos o erro no servidor
+        ).catch(err => logger.error('Failed to register click', { 
+            linkId, 
+            error: err.message 
+        }));
 
         res.redirect(301, originalUrl);
 
     } catch (err) {
-        console.error(err.message);
+        logger.error('Analytics error - recordClick', { 
+            endpoint: 'recordClickAndRedirect',
+            linkId: req.params.linkId,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -44,7 +53,13 @@ exports.getLinkAnalytics = async (req, res) => {
         res.json({ linkId, click_count: count });
 
     } catch (err) {
-        console.error(err.message);
+        logger.error('Analytics error - getLinkAnalytics', { 
+            endpoint: 'getLinkAnalytics',
+            userId: req.user.id,
+            linkId: req.params.linkId,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };

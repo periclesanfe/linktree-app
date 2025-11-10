@@ -1,5 +1,6 @@
 const pool = require('../db/pool');
 const { validationResult } = require('express-validator');
+const logger = require('../utils/logger');
 
 exports.createLink = async (req, res) => {
     const errors = validationResult(req);
@@ -21,7 +22,12 @@ exports.createLink = async (req, res) => {
 
         res.status(201).json(newLink.rows[0]);
     } catch (err) {
-        console.error(err.message);
+        logger.error('Links error - createLink', { 
+            endpoint: 'createLink',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -31,7 +37,12 @@ exports.getLinks = async (req, res) => {
         const links = await pool.query("SELECT * FROM links WHERE user_id = $1 ORDER BY display_order ASC", [req.user.id]);
         res.json(links.rows);
     } catch (err) {
-        console.error(err.message);
+        logger.error('Links error - getLinks', { 
+            endpoint: 'getLinks',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -61,7 +72,13 @@ exports.updateLink = async (req, res) => {
         
         res.json(updatedLink.rows[0]);
     } catch (err) {
-        console.error(err.message);
+        logger.error('Links error - updateLink', { 
+            endpoint: 'updateLink',
+            userId: req.user.id,
+            linkId: req.params.id,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -80,7 +97,13 @@ exports.deleteLink = async (req, res) => {
         
         res.json({ msg: 'Link removido com sucesso.' });
     } catch (err) {
-        console.error(err.message);
+        logger.error('Links error - deleteLink', { 
+            endpoint: 'deleteLink',
+            userId: req.user.id,
+            linkId: req.params.id,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -111,7 +134,13 @@ exports.uploadLinkCoverImage = async (req, res) => {
         res.json(updatedLink.rows[0]);
 
     } catch (err) {
-        console.error(err.message);
+        logger.error('Links error - uploadLinkCover', { 
+            endpoint: 'uploadLinkCover',
+            userId: req.user.id,
+            linkId: req.params.id,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor ao salvar a imagem do link.');
     }
 };

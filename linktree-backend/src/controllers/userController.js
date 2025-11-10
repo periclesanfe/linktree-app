@@ -1,12 +1,18 @@
 const pool = require('../db/pool');
 const bcrypt = require('bcryptjs');
+const logger = require('../utils/logger');
 
 exports.getMe = async (req, res) => {
     try {
         const user = await pool.query("SELECT id, username, email, display_name, bio FROM users WHERE id = $1", [req.user.id]);
         res.json(user.rows[0]);
     } catch (err) {
-        console.error(err.message);
+        logger.error('User error - getMe', { 
+            endpoint: 'getMe',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -25,7 +31,12 @@ exports.updateMe = async (req, res) => {
         );
         res.json(result.rows[0]);
     } catch (err) {
-        console.error(err.message);
+        logger.error('User error - updateMe', { 
+            endpoint: 'updateMe',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -35,7 +46,12 @@ exports.deleteMe = async (req, res) => {
         await pool.query("DELETE FROM users WHERE id = $1", [req.user.id]);
         res.json({ msg: 'Usuário deletado com sucesso.' });
     } catch (err) {
-        console.error(err.message);
+        logger.error('User error - deleteMe', { 
+            endpoint: 'deleteMe',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor');
     }
 };
@@ -58,7 +74,12 @@ exports.uploadProfilePicture = async (req, res) => {
         res.json({ msg: 'Imagem de perfil atualizada com sucesso!', url: dataUrl });
 
     } catch (err) {
-        console.error(err.message);
+        logger.error('User error - uploadProfilePicture', { 
+            endpoint: 'uploadProfilePicture',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack 
+        });
         res.status(500).send('Erro no servidor ao salvar a imagem.');
     }
 };
