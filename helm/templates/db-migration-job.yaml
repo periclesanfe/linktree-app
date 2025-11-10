@@ -65,12 +65,12 @@ spec:
 
           -- Cria uma função que será usada por gatilhos (triggers) para atualizar o campo updated_at.
           CREATE OR REPLACE FUNCTION trigger_set_timestamp()
-          RETURNS TRIGGER AS $$
+          RETURNS TRIGGER AS $BODY$
           BEGIN
             NEW.updated_at = NOW();
             RETURN NEW;
           END;
-          $$ LANGUAGE plpgsql;
+          $BODY$ LANGUAGE plpgsql;
 
           -- Tabela para guardar os usuários
           CREATE TABLE IF NOT EXISTS users (
@@ -138,6 +138,63 @@ spec:
           );
 
           CREATE INDEX IF NOT EXISTS idx_analytics_clicks_link_id ON analytics_clicks(link_id);
+
+          -- Inserir usuário de teste (senha: 123)
+          INSERT INTO users (username, email, password_hash, display_name, bio)
+          VALUES (
+            'teste',
+            'teste@t.com',
+            '$2b$10$5YNi5qy47pH3SXH3VUzBbuKq1GsRX0BJmUK1raHXGil6FMUBAS4jK',
+            'Usuário de Teste',
+            'Conta de teste para demonstração'
+          )
+          ON CONFLICT (username) DO UPDATE SET
+            email = EXCLUDED.email,
+            password_hash = EXCLUDED.password_hash,
+            display_name = EXCLUDED.display_name,
+            bio = EXCLUDED.bio;
+
+          -- Adicionar links de exemplo para o usuário de teste (apenas se não existirem)
+          INSERT INTO links (user_id, title, url, display_order)
+          SELECT u.id, 'GitHub', 'https://github.com', 1 
+          FROM users u 
+          WHERE u.username = 'teste'
+          AND NOT EXISTS (
+            SELECT 1 FROM links WHERE user_id = u.id AND title = 'GitHub'
+          );
+
+          INSERT INTO links (user_id, title, url, display_order)
+          SELECT u.id, 'LinkedIn', 'https://linkedin.com', 2 
+          FROM users u
+          WHERE u.username = 'teste'
+          AND NOT EXISTS (
+            SELECT 1 FROM links WHERE user_id = u.id AND title = 'LinkedIn'
+          );
+
+          INSERT INTO links (user_id, title, url, display_order)
+          SELECT u.id, 'Portfolio', 'https://example.com', 3 
+          FROM users u
+          WHERE u.username = 'teste'
+          AND NOT EXISTS (
+            SELECT 1 FROM links WHERE user_id = u.id AND title = 'Portfolio'
+          );
+
+          -- Adicionar ícones sociais de exemplo (apenas se não existirem)
+          INSERT INTO social_icons (user_id, platform, url)
+          SELECT u.id, 'instagram', 'https://instagram.com/teste' 
+          FROM users u
+          WHERE u.username = 'teste'
+          AND NOT EXISTS (
+            SELECT 1 FROM social_icons WHERE user_id = u.id AND platform = 'instagram'
+          );
+
+          INSERT INTO social_icons (user_id, platform, url)
+          SELECT u.id, 'github', 'https://github.com/teste' 
+          FROM users u
+          WHERE u.username = 'teste'
+          AND NOT EXISTS (
+            SELECT 1 FROM social_icons WHERE user_id = u.id AND platform = 'github'
+          );
           EOF
           echo "Migrações concluídas com sucesso!"
         resources:

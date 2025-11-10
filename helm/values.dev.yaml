@@ -9,7 +9,7 @@ backend:
   
   image:
     repository: ghcr.io/periclesanfe/linktree-backend
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     tag: "dev-latest"
   
   service:
@@ -32,7 +32,7 @@ frontend:
   
   image:
     repository: ghcr.io/periclesanfe/linktree-frontend
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     tag: "dev-latest"
   
   service:
