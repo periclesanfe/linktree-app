@@ -6,6 +6,7 @@ interface Link {
   id: string;
   title: string;
   url: string;
+  color_hash?: string;
 }
 
 interface LinkModalProps {
@@ -18,6 +19,7 @@ interface LinkModalProps {
 const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existingLink }) => {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
+  const [color, setColor] = useState('#6366f1'); // Cor padrão (indigo)
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -25,10 +27,12 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
     if (existingLink) {
       setTitle(existingLink.title);
       setUrl(existingLink.url);
+      setColor(existingLink.color_hash || '#6366f1');
     } else {
       // Se estamos criando, limpa o formulário
       setTitle('');
       setUrl('');
+      setColor('#6366f1');
     }
   }, [existingLink, isOpen]);
 
@@ -38,7 +42,7 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
 
     try {
       let response;
-      const linkData = { title, url };
+      const linkData = { title, url, color_hash: color };
       if (existingLink) {
         // Modo de Edição (UPDATE)
         response = await apiClient.put(`/links/${existingLink.id}`, linkData);
@@ -72,7 +76,7 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
               required
             />
           </div>
-          <div className="mb-6">
+          <div className="mb-4">
             <label htmlFor="url" className="block text-gray-700 mb-2">URL</label>
             <input
               type="url"
@@ -83,7 +87,19 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
               required
             />
           </div>
-          {/* Futuramente, o campo de upload de imagem viria aqui */}
+          <div className="mb-6">
+            <label htmlFor="color" className="block text-gray-700 mb-2">Cor do Link</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                id="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="h-10 w-20 border rounded cursor-pointer"
+              />
+              <span className="text-sm text-gray-600">{color}</span>
+            </div>
+          </div>
           <div className="flex justify-end space-x-4">
             <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">
               Cancelar

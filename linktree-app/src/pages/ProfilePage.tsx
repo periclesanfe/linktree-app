@@ -9,6 +9,7 @@ interface Link {
   title: string;
   url: string;
   cover_image_url?: string | null;
+  color_hash?: string | null;
 }
 
 interface SocialIcon {
@@ -23,6 +24,7 @@ interface ProfileData {
   display_name: string;
   bio: string;
   profile_image_url: string | null;
+  background_image_url: string | null;
   links: Link[];
   socialIcons: SocialIcon[];
 }
@@ -57,8 +59,20 @@ const ProfilePage = () => {
   const backendBaseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
   return (
-    <div className="bg-gray-800 text-white min-h-screen p-4 flex flex-col items-center">
-      <main className="w-full max-w-2xl mx-auto">
+    <div
+      className="text-white min-h-screen p-4 flex flex-col items-center bg-cover bg-center bg-no-repeat relative"
+      style={{
+        backgroundImage: profile?.background_image_url
+          ? `url(${profile.background_image_url})`
+          : 'linear-gradient(to bottom, #1f2937, #111827)'
+      }}
+    >
+      {/* Overlay para melhorar a legibilidade do texto sobre a imagem */}
+      {profile?.background_image_url && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 z-0"></div>
+      )}
+
+      <main className="w-full max-w-2xl mx-auto relative z-10">
         {/* Perfil Header */}
         <header className="text-center mt-12 mb-8">
           <img 
@@ -73,14 +87,25 @@ const ProfilePage = () => {
         {/* Lista de Links */}
         <section className="space-y-4">
           {profile?.links.map(link => (
-            <a 
+            <a
               key={link.id}
-              href={`${backendBaseUrl}/r/${link.id}`} // Aponta para nossa rota de redirecionamento
+              href={`${backendBaseUrl}/r/${link.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="block bg-gray-700 p-4 rounded-lg text-center font-semibold hover:bg-gray-600 transition-transform transform hover:scale-105"
+              className="block p-4 rounded-lg text-center font-semibold transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
+              style={{
+                backgroundColor: link.color_hash || '#374151',
+                color: '#ffffff'
+              }}
             >
-              {link.title}
+              {link.cover_image_url && (
+                <img
+                  src={link.cover_image_url}
+                  alt={link.title}
+                  className="w-12 h-12 object-cover rounded-md"
+                />
+              )}
+              <span>{link.title}</span>
             </a>
           ))}
         </section>

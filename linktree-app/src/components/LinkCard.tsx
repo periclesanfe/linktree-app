@@ -7,6 +7,7 @@ interface Link {
   title: string;
   url: string;
   cover_image_url?: string | null;
+  color_hash?: string | null;
 }
 
 interface LinkCardProps {
@@ -44,10 +45,16 @@ const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, onDelete, onCoverImag
   };
 
   return (
-    <div className="flex items-center p-4 border rounded-lg bg-gray-50 shadow-sm">
-      <img 
-        src={link.cover_image_url || 'https://via.placeholder.com/100x100?text=Capa'} 
-        alt={`Capa para ${link.title}`} 
+    <div
+      className="flex items-center p-4 border rounded-lg shadow-sm"
+      style={{
+        backgroundColor: link.color_hash ? `${link.color_hash}15` : '#f9fafb',
+        borderColor: link.color_hash || '#e5e7eb'
+      }}
+    >
+      <img
+        src={link.cover_image_url || 'https://via.placeholder.com/100x100?text=Capa'}
+        alt={`Capa para ${link.title}`}
         className="w-20 h-20 object-cover rounded-md mr-4"
       />
       <div className="flex-grow">

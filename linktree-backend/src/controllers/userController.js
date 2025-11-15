@@ -4,14 +4,14 @@ const logger = require('../utils/logger');
 
 exports.getMe = async (req, res) => {
     try {
-        const user = await pool.query("SELECT id, username, email, display_name, bio FROM users WHERE id = $1", [req.user.id]);
+        const user = await pool.query("SELECT id, username, email, display_name, bio, profile_image_url, background_image_url FROM users WHERE id = $1", [req.user.id]);
         res.json(user.rows[0]);
     } catch (err) {
-        logger.error('User error - getMe', { 
+        logger.error('User error - getMe', {
             endpoint: 'getMe',
             userId: req.user.id,
             error: err.message,
-            stack: err.stack 
+            stack: err.stack
         });
         res.status(500).send('Erro no servidor');
     }
@@ -74,12 +74,40 @@ exports.uploadProfilePicture = async (req, res) => {
         res.json({ msg: 'Imagem de perfil atualizada com sucesso!', url: dataUrl });
 
     } catch (err) {
-        logger.error('User error - uploadProfilePicture', { 
+        logger.error('User error - uploadProfilePicture', {
             endpoint: 'uploadProfilePicture',
             userId: req.user.id,
             error: err.message,
-            stack: err.stack 
+            stack: err.stack
         });
         res.status(500).send('Erro no servidor ao salvar a imagem.');
+    }
+};
+
+exports.uploadBackgroundImage = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ msg: 'Nenhum arquivo enviado.' });
+    }
+
+    try {
+        const mimeType = req.file.mimetype;
+        const base64Data = req.file.buffer.toString('base64');
+        const dataUrl = `data:${mimeType};base64,${base64Data}`;
+
+        await pool.query(
+            "UPDATE users SET background_image_url = $1 WHERE id = $2",
+            [dataUrl, req.user.id]
+        );
+
+        res.json({ msg: 'Imagem de background atualizada com sucesso!', url: dataUrl });
+
+    } catch (err) {
+        logger.error('User error - uploadBackgroundImage', {
+            endpoint: 'uploadBackgroundImage',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack
+        });
+        res.status(500).send('Erro no servidor ao salvar a imagem de background.');
     }
 };

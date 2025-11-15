@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const multer = require('multer');
 const authMiddleware = require('../middleware/authMiddleware');
-const { getMe, updateMe, deleteMe, uploadProfilePicture } = require('../controllers/userController');
+const { getMe, updateMe, deleteMe, uploadProfilePicture, uploadBackgroundImage } = require('../controllers/userController');
 
 const router = Router();
 
@@ -15,6 +15,12 @@ router.post(
     authMiddleware,
     upload.single('profilePicture'),
     uploadProfilePicture
+);
+router.post(
+    '/me/background-image',
+    authMiddleware,
+    upload.single('backgroundImage'),
+    uploadBackgroundImage
 );
 
 module.exports = router;

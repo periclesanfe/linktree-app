@@ -19,6 +19,7 @@ interface User {
   display_name: string;
   bio: string;
   profile_image_url: string | null;
+  background_image_url: string | null;
 }
 
 const AdminPage = () => {
@@ -31,7 +32,9 @@ const AdminPage = () => {
   // --- NOVOS ESTADOS PARA O PERFIL E UPLOAD ---
   const [user, setUser] = useState<User | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedBackgroundFile, setSelectedBackgroundFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const backgroundFileInputRef = useRef<HTMLInputElement>(null);
 
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -62,6 +65,12 @@ const AdminPage = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setSelectedFile(event.target.files[0]);
+    }
+  };
+
+  const handleBackgroundFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedBackgroundFile(event.target.files[0]);
     }
   };
 
@@ -107,6 +116,29 @@ const AdminPage = () => {
     }
   };
 
+  const handleBackgroundImageUpload = async () => {
+    if (!selectedBackgroundFile) return;
+
+    const formData = new FormData();
+    formData.append('backgroundImage', selectedBackgroundFile);
+
+    try {
+      const response = await apiClient.post('/users/me/background-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      // Atualiza o estado do usuário com a nova URL da imagem de background
+      setUser(currentUser => currentUser ? { ...currentUser, background_image_url: response.data.url } : null);
+      setSelectedBackgroundFile(null); // Limpa o arquivo selecionado
+      alert('Imagem de background atualizada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao fazer upload da imagem de background:', error);
+      alert('Falha no upload da imagem de background.');
+    }
+  };
+
   // Funções existentes
   const handleLogout = () => { logout(); navigate('/login'); };
   const handleOpenModalForCreate = () => { setEditingLink(null); setIsModalOpen(true); };
@@ -147,37 +179,83 @@ const AdminPage = () => {
       {/* --- NOVA SEÇÃO DE PERFIL --- */}
       <section className="bg-white p-6 rounded-lg shadow-md mb-8">
         <h2 className="text-2xl font-semibold mb-4">Meu Perfil</h2>
-        <div className="flex items-center space-x-6">
-          <img
-            src={user?.profile_image_url || 'https://via.placeholder.com/150'}
-            alt="Foto de Perfil"
-            className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
-          />
-          <div>
-            <input
-              type="file"
-              accept="image/*"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden" // O input fica escondido
+
+        {/* Foto de Perfil */}
+        <div className="mb-6">
+          <h3 className="text-lg font-medium mb-3">Foto de Perfil</h3>
+          <div className="flex items-center space-x-6">
+            <img
+              src={user?.profile_image_url || 'https://via.placeholder.com/150'}
+              alt="Foto de Perfil"
+              className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
             />
-            <button
-              onClick={() => fileInputRef.current?.click()} // O botão ativa o input
-              className="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300"
-            >
-              Trocar Imagem
-            </button>
-            {selectedFile && (
-              <div className="mt-2">
-                <p className="text-sm text-gray-600">Arquivo selecionado: {selectedFile.name}</p>
-                <button
-                  onClick={handleImageUpload}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mt-2"
-                >
-                  Salvar Imagem
-                </button>
-              </div>
-            )}
+            <div>
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300"
+              >
+                Trocar Imagem
+              </button>
+              {selectedFile && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-600">Arquivo selecionado: {selectedFile.name}</p>
+                  <button
+                    onClick={handleImageUpload}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mt-2"
+                  >
+                    Salvar Imagem
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Imagem de Background */}
+        <div>
+          <h3 className="text-lg font-medium mb-3">Imagem de Background</h3>
+          <div className="flex items-center space-x-6">
+            <div
+              className="w-64 h-32 rounded-lg border-4 border-gray-200 bg-cover bg-center"
+              style={{
+                backgroundImage: user?.background_image_url
+                  ? `url(${user.background_image_url})`
+                  : 'linear-gradient(to right, #6366f1, #8b5cf6)'
+              }}
+            />
+            <div>
+              <input
+                type="file"
+                accept="image/*"
+                ref={backgroundFileInputRef}
+                onChange={handleBackgroundFileChange}
+                className="hidden"
+              />
+              <button
+                onClick={() => backgroundFileInputRef.current?.click()}
+                className="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300"
+              >
+                Trocar Background
+              </button>
+              {selectedBackgroundFile && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-600">Arquivo selecionado: {selectedBackgroundFile.name}</p>
+                  <button
+                    onClick={handleBackgroundImageUpload}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mt-2"
+                  >
+                    Salvar Background
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
