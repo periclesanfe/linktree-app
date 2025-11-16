@@ -89,18 +89,18 @@ exports.loginUser = async (req, res) => {
 
 exports.getCurrentUser = async (req, res) => {
     try {
-        const user = await pool.query("SELECT id, username, email, display_name, bio, profile_image_url FROM users WHERE id = $1", [req.user.id]);
+        const user = await pool.query("SELECT id, username, email, display_name, bio, profile_image_url, background_image_url, accent_color FROM users WHERE id = $1", [req.user.id]);
         if (user.rows.length === 0) {
             return res.status(404).json({ msg: "Usuário não encontrado." });
         }
 
         res.json(user.rows[0]);
     } catch (err) {
-        logger.error('Auth error - getCurrentUser', { 
+        logger.error('Auth error - getCurrentUser', {
             endpoint: 'getCurrentUser',
             userId: req.user.id,
             error: err.message,
-            stack: err.stack 
+            stack: err.stack
         });
         res.status(500).send('Erro no servidor');
     }

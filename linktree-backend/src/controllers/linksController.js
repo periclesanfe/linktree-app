@@ -9,7 +9,7 @@ exports.createLink = async (req, res) => {
     }
 
     const { title, url, color_hash, cover_image_url } = req.body;
-    const userId = req.user.id; 
+    const userId = req.user.id;
 
     try {
         const orderResult = await pool.query("SELECT COUNT(*) FROM links WHERE user_id = $1", [userId]);
@@ -22,11 +22,11 @@ exports.createLink = async (req, res) => {
 
         res.status(201).json(newLink.rows[0]);
     } catch (err) {
-        logger.error('Links error - createLink', { 
+        logger.error('Links error - createLink', {
             endpoint: 'createLink',
             userId: req.user.id,
             error: err.message,
-            stack: err.stack 
+            stack: err.stack
         });
         res.status(500).send('Erro no servidor');
     }
@@ -69,15 +69,15 @@ exports.updateLink = async (req, res) => {
             "UPDATE links SET title = $1, url = $2, color_hash = $3, cover_image_url = $4, display_order = $5 WHERE id = $6 RETURNING *",
             [newTitle, newUrl, newColorHash, newCoverImageUrl, newDisplayOrder, linkId]
         );
-        
+
         res.json(updatedLink.rows[0]);
     } catch (err) {
-        logger.error('Links error - updateLink', { 
+        logger.error('Links error - updateLink', {
             endpoint: 'updateLink',
             userId: req.user.id,
             linkId: req.params.id,
             error: err.message,
-            stack: err.stack 
+            stack: err.stack
         });
         res.status(500).send('Erro no servidor');
     }
@@ -121,7 +121,7 @@ exports.uploadLinkCoverImage = async (req, res) => {
         if (linkResult.rows.length === 0) {
             return res.status(404).json({ msg: 'Link não encontrado ou você não tem permissão.' });
         }
-        
+
         const mimeType = req.file.mimetype;
         const base64Data = req.file.buffer.toString('base64');
         const dataUrl = `data:${mimeType};base64,${base64Data}`;
@@ -134,13 +134,41 @@ exports.uploadLinkCoverImage = async (req, res) => {
         res.json(updatedLink.rows[0]);
 
     } catch (err) {
-        logger.error('Links error - uploadLinkCover', { 
+        logger.error('Links error - uploadLinkCover', {
             endpoint: 'uploadLinkCover',
             userId: req.user.id,
             linkId: req.params.id,
             error: err.message,
-            stack: err.stack 
+            stack: err.stack
         });
         res.status(500).send('Erro no servidor ao salvar a imagem do link.');
+    }
+};
+
+exports.reorderLinks = async (req, res) => {
+    const { links } = req.body;
+    const userId = req.user.id;
+
+    if (!links || !Array.isArray(links)) {
+        return res.status(400).json({ msg: 'Dados de reordenação inválidos.' });
+    }
+
+    try {
+        for (const link of links) {
+            await pool.query(
+                "UPDATE links SET display_order = $1 WHERE id = $2 AND user_id = $3",
+                [link.display_order, link.id, userId]
+            );
+        }
+
+        res.json({ msg: 'Links reordenados com sucesso!' });
+    } catch (err) {
+        logger.error('Links error - reorderLinks', {
+            endpoint: 'reorderLinks',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack
+        });
+        res.status(500).send('Erro no servidor');
     }
 };

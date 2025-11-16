@@ -3,12 +3,13 @@ const express = require('express');
 const { body } = require('express-validator');
 const multer = require('multer');
 const authMiddleware = require('../middleware/authMiddleware');
-const { 
-    createLink, 
-    getLinks, 
-    updateLink, 
+const {
+    createLink,
+    getLinks,
+    updateLink,
     deleteLink,
-    uploadLinkCoverImage
+    uploadLinkCoverImage,
+    reorderLinks
 } = require('../controllers/linksController');
 
 const router = Router();
@@ -40,5 +41,7 @@ router.post(
     upload.single('coverImage'),
     uploadLinkCoverImage
 );
+
+router.put('/reorder', authMiddleware, reorderLinks);
 
 module.exports = router;

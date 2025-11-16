@@ -6,7 +6,7 @@ exports.getPublicProfile = async (req, res) => {
 
     try {
         const userResult = await pool.query(
-            "SELECT id, username, display_name, bio, profile_image_url, background_image_url FROM users WHERE username = $1",
+            "SELECT id, username, display_name, bio, profile_image_url, background_image_url, accent_color FROM users WHERE username = $1",
             [username]
         );
 

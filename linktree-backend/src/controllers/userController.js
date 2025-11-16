@@ -4,7 +4,7 @@ const logger = require('../utils/logger');
 
 exports.getMe = async (req, res) => {
     try {
-        const user = await pool.query("SELECT id, username, email, display_name, bio, profile_image_url, background_image_url FROM users WHERE id = $1", [req.user.id]);
+        const user = await pool.query("SELECT id, username, email, display_name, bio, profile_image_url, background_image_url, accent_color FROM users WHERE id = $1", [req.user.id]);
         res.json(user.rows[0]);
     } catch (err) {
         logger.error('User error - getMe', {
@@ -109,5 +109,30 @@ exports.uploadBackgroundImage = async (req, res) => {
             stack: err.stack
         });
         res.status(500).send('Erro no servidor ao salvar a imagem de background.');
+    }
+};
+
+exports.updateAccentColor = async (req, res) => {
+    const { accent_color } = req.body;
+
+    if (!accent_color) {
+        return res.status(400).json({ msg: 'Cor de destaque não fornecida.' });
+    }
+
+    try {
+        const result = await pool.query(
+            "UPDATE users SET accent_color = $1 WHERE id = $2 RETURNING accent_color",
+            [accent_color, req.user.id]
+        );
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        logger.error('User error - updateAccentColor', {
+            endpoint: 'updateAccentColor',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack
+        });
+        res.status(500).send('Erro no servidor');
     }
 };

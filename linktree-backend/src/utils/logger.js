@@ -24,9 +24,14 @@ winston.addColors(colors);
 // Formato para desenvolvimento (legível)
 const devFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.errors({ stack: true }),
   winston.format.colorize({ all: true }),
   winston.format.printf(
-    (info) => `[${info.timestamp}] ${info.level}: ${info.message}`
+    (info) => {
+      const { timestamp, level, message, ...meta } = info;
+      const metaStr = Object.keys(meta).length ? '\n' + JSON.stringify(meta, null, 2) : '';
+      return `[${timestamp}] ${level}: ${message}${metaStr}`;
+    }
   )
 );
 
