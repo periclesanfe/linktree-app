@@ -1,6 +1,20 @@
 const pool = require('../db/pool');
 const logger = require('../utils/logger');
+const crypto = require('crypto');
 
+// Função auxiliar para obter IP do visitante
+function getClientIp(req) {
+    return req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+           req.headers['x-real-ip'] ||
+           req.connection.remoteAddress ||
+           req.socket.remoteAddress ||
+           'unknown';
+}
+
+// Função auxiliar para hash do IP (privacidade)
+function hashIp(ip) {
+    return crypto.createHash('sha256').update(ip).digest('hex');
+}
 
 exports.recordClickAndRedirect = async (req, res) => {
     const { linkId } = req.params;
@@ -14,23 +28,27 @@ exports.recordClickAndRedirect = async (req, res) => {
 
         const originalUrl = linkResult.rows[0].url;
 
+        // Captura informações do visitante
+        const clientIp = getClientIp(req);
+        const ipHash = hashIp(clientIp);
 
+        // Registra o clique com informações adicionais
         pool.query(
-            "INSERT INTO analytics_clicks (link_id) VALUES ($1)",
-            [linkId]
-        ).catch(err => logger.error('Failed to register click', { 
-            linkId, 
-            error: err.message 
+            "INSERT INTO analytics_clicks (link_id, ip_hash) VALUES ($1, $2)",
+            [linkId, ipHash]
+        ).catch(err => logger.error('Failed to register click', {
+            linkId,
+            error: err.message
         }));
 
         res.redirect(301, originalUrl);
 
     } catch (err) {
-        logger.error('Analytics error - recordClick', { 
+        logger.error('Analytics error - recordClick', {
             endpoint: 'recordClickAndRedirect',
             linkId: req.params.linkId,
             error: err.message,
-            stack: err.stack 
+            stack: err.stack
         });
         res.status(500).send('Erro no servidor');
     }

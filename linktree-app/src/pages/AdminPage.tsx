@@ -49,6 +49,16 @@ const AdminPage = () => {
     onConfirm: () => {}
   });
 
+  // Estados para configurações da conta
+  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Estado para controlar a aba ativa
+  const [activeTab, setActiveTab] = useState<'perfil' | 'links' | 'configuracoes'>('perfil');
+
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -64,6 +74,8 @@ const AdminPage = () => {
         ]);
         setUser(userResponse.data);
         setAccentColor(userResponse.data.accent_color || '#6366f1');
+        setDisplayName(userResponse.data.display_name || '');
+        setUsername(userResponse.data.username || '');
         setLinks(linksResponse.data);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
@@ -147,6 +159,58 @@ const AdminPage = () => {
     } catch (error) {
       console.error('Erro ao atualizar cor de destaque:', error);
       toast.error('Não foi possível salvar a cor.', { id: toastId });
+    }
+  };
+
+  // --- FUNÇÕES PARA ATUALIZAR DADOS DA CONTA ---
+  const handleUpdateProfile = async () => {
+    const toastId = toast.loading('Salvando alterações...');
+
+    try {
+      const response = await apiClient.put('/users/me', {
+        display_name: displayName,
+        username: username
+      });
+      setUser(currentUser => currentUser ? { ...currentUser, ...response.data } : null);
+      toast.success('Dados atualizados com sucesso!', { id: toastId });
+    } catch (error: any) {
+      console.error('Erro ao atualizar dados:', error);
+      const errorMsg = error.response?.data?.msg || 'Não foi possível atualizar os dados.';
+      toast.error(errorMsg, { id: toastId });
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Preencha todos os campos de senha.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('A nova senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    const toastId = toast.loading('Alterando senha...');
+
+    try {
+      await apiClient.put('/users/me/password', {
+        currentPassword,
+        newPassword
+      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      toast.success('Senha alterada com sucesso!', { id: toastId });
+    } catch (error: any) {
+      console.error('Erro ao alterar senha:', error);
+      const errorMsg = error.response?.data?.msg || 'Não foi possível alterar a senha.';
+      toast.error(errorMsg, { id: toastId });
     }
   };
 
@@ -299,7 +363,61 @@ const AdminPage = () => {
           </div>
         </header>
 
-        {/* Seção de Perfil Melhorada */}
+        {/* Navegação por Abas */}
+        <div className="bg-white rounded-2xl shadow-lg p-2 mb-8">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('perfil')}
+              className={`flex-1 px-2 py-4 rounded-xl font-semibold transition-all ${
+                activeTab === 'perfil'
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <div className="flex flex-col items-center justify-center gap-1.5">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="text-xs sm:text-sm">Perfil</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('links')}
+              className={`flex-1 px-2 py-4 rounded-xl font-semibold transition-all ${
+                activeTab === 'links'
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <div className="flex flex-col items-center justify-center gap-1.5">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                <span className="text-xs sm:text-sm">Links</span>
+                <span className="text-[10px] sm:text-xs opacity-75">({links.length})</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('configuracoes')}
+              className={`flex-1 px-2 py-4 rounded-xl font-semibold transition-all ${
+                activeTab === 'configuracoes'
+                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <div className="flex flex-col items-center justify-center gap-1.5">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="text-xs sm:text-sm">Config</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Conteúdo da Aba Perfil */}
+        {activeTab === 'perfil' && (
         <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg mb-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
@@ -452,8 +570,116 @@ const AdminPage = () => {
           </div>
         </div>
       </section>
+        )}
 
-        {/* Seção de Links Melhorada */}
+        {/* Conteúdo da Aba Configurações */}
+        {activeTab === 'configuracoes' && (
+        <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Configurações da Conta</h2>
+          </div>
+
+          <div className="space-y-6">
+            {/* Dados Pessoais */}
+            <div className="border-b pb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Dados Pessoais</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nome de Exibição
+                  </label>
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="Seu nome"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nome de Usuário
+                  </label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="@usuario"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleUpdateProfile}
+                className="mt-4 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium shadow-md"
+              >
+                Salvar Alterações
+              </button>
+            </div>
+
+            {/* Alterar Senha */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Alterar Senha</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Senha Atual
+                  </label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="••••••"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nova Senha
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="••••••"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirmar Senha
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="••••••"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleUpdatePassword}
+                className="mt-4 bg-orange-600 text-white px-6 py-2.5 rounded-lg hover:bg-orange-700 transition font-medium shadow-md"
+              >
+                Alterar Senha
+              </button>
+              <p className="text-xs text-gray-600 mt-2">
+                A senha deve ter pelo menos 6 caracteres
+              </p>
+            </div>
+          </div>
+        </section>
+        )}
+
+        {/* Conteúdo da Aba Links */}
+        {activeTab === 'links' && (
         <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div className="flex items-center gap-3">
@@ -500,6 +726,7 @@ const AdminPage = () => {
           )}
         </div>
         </section>
+        )}
 
         <LinkModal isOpen={isModalOpen} onClose={handleCloseModal} onSave={handleSaveLink} existingLink={editingLink} />
       </div>

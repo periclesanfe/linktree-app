@@ -136,3 +136,56 @@ exports.updateAccentColor = async (req, res) => {
         res.status(500).send('Erro no servidor');
     }
 };
+
+exports.updatePassword = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ msg: 'Senha atual e nova senha são obrigatórias.' });
+    }
+
+    if (newPassword.length < 6) {
+        return res.status(400).json({ msg: 'A nova senha deve ter pelo menos 6 caracteres.' });
+    }
+
+    try {
+        // Busca a senha atual do usuário
+        const userResult = await pool.query(
+            "SELECT password_hash FROM users WHERE id = $1",
+            [req.user.id]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ msg: 'Usuário não encontrado.' });
+        }
+
+        const user = userResult.rows[0];
+
+        // Verifica se a senha atual está correta
+        const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'Senha atual incorreta.' });
+        }
+
+        // Hash da nova senha
+        const salt = await bcrypt.genSalt(10);
+        const newPasswordHash = await bcrypt.hash(newPassword, salt);
+
+        // Atualiza a senha no banco
+        await pool.query(
+            "UPDATE users SET password_hash = $1 WHERE id = $2",
+            [newPasswordHash, req.user.id]
+        );
+
+        res.json({ msg: 'Senha atualizada com sucesso!' });
+
+    } catch (err) {
+        logger.error('User error - updatePassword', {
+            endpoint: 'updatePassword',
+            userId: req.user.id,
+            error: err.message,
+            stack: err.stack
+        });
+        res.status(500).send('Erro no servidor');
+    }
+};

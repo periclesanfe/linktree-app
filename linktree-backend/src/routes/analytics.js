@@ -4,6 +4,6 @@ const { getLinkAnalytics } = require('../controllers/analyticsController');
 
 const router = Router();
 
-router.get('/:linkId', authMiddleware, getLinkAnalytics);
+router.get('/links/:linkId', authMiddleware, getLinkAnalytics);
 
 module.exports = router;
