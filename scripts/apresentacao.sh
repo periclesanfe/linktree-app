@@ -245,6 +245,12 @@ wait_for_user
 print_step "PASSO 7: Deploy do PostgreSQL via CloudNativePG"
 echo ""
 
+print_info "Criando secret para credenciais PostgreSQL..."
+kubectl create secret generic linktree-dev-postgres-credentials -n dev \
+  --from-literal=username=linktree_dev_user \
+  --from-literal=password=dev_password_123 \
+  --dry-run=client -o yaml | kubectl apply -f -
+
 print_info "Criando cluster PostgreSQL..."
 cat <<EOF | kubectl apply -f -
 apiVersion: postgresql.cnpg.io/v1
@@ -260,6 +266,8 @@ spec:
     initdb:
       database: linktree_db
       owner: linktree_dev_user
+      secret:
+        name: linktree-dev-postgres-credentials
 EOF
 
 print_info "Aguardando cluster PostgreSQL ficar pronto (2-3 minutos)..."
