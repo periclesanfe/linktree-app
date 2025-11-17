@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: linktree-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: linktree
+    environment: dev
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  # Source: Aponta para a pasta com as applications
+  source:
+    repoURL: https://github.com/periclesanfe/linktree-app.git
+    targetRevision: HEAD
+    path: argocd/apps/dev
+    directory:
+      recurse: true
+
+  # Destination: ArgoCD namespace (App of Apps)
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  # Sync Policy
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

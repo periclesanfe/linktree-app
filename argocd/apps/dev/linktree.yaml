@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: linktree-dev-app
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: linktree
+    app.kubernetes.io/component: application
+    environment: dev
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"  # Sincroniza DEPOIS da infraestrutura
+spec:
+  project: default
+
+  # Source: Chart da aplicação (backend + frontend)
+  source:
+    repoURL: https://github.com/periclesanfe/linktree-app.git
+    targetRevision: HEAD
+    path: helm/charts-new/linktree
+    helm:
+      releaseName: linktree-dev
+      valueFiles:
+        - values.dev.yaml
+
+  # Destination: Namespace dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+
+  # Sync Policy
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

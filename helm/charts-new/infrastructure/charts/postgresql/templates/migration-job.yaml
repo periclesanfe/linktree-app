@@ -1,10 +1,10 @@
-{{- if .Values.database.migration.enabled }}
+{{- if .Values.migration.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "linktree.fullname" . }}-db-migration
+  name: {{ include "linktree-database.fullname" . }}-migration
   labels:
-    {{- include "linktree.labels" . | nindent 4 }}
+    {{- include "linktree-database.labels" . | nindent 4 }}
     app.kubernetes.io/component: db-migration
   annotations:
     # ArgoCD Sync Wave: Este Job será executado ANTES dos Deployments (wave 0)
@@ -14,41 +14,37 @@ metadata:
     # Deletar o Job após sucesso para evitar conflitos em próximos syncs
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
-  ttlSecondsAfterFinished: {{ .Values.database.migration.ttlSecondsAfterFinished }}
-  backoffLimit: {{ .Values.database.migration.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.migration.ttlSecondsAfterFinished }}
+  backoffLimit: {{ .Values.migration.backoffLimit }}
   template:
     metadata:
-      name: {{ include "linktree.fullname" . }}-db-migration
+      name: {{ include "linktree-database.fullname" . }}-migration
       labels:
-        {{- include "linktree.labels" . | nindent 8 }}
+        {{- include "linktree-database.labels" . | nindent 8 }}
         app.kubernetes.io/component: db-migration
     spec:
       restartPolicy: OnFailure
-      {{- if .Values.database.migration.image.pullSecrets }}
-      imagePullSecrets:
-        {{- toYaml .Values.database.migration.image.pullSecrets | nindent 8 }}
-      {{- end }}
       containers:
       - name: db-migration
-        image: "{{ .Values.database.migration.image.repository }}:{{ .Values.database.migration.image.tag }}"
-        imagePullPolicy: {{ .Values.database.migration.image.pullPolicy }}
+        image: "{{ .Values.migration.image.repository }}:{{ .Values.migration.image.tag }}"
+        imagePullPolicy: {{ .Values.migration.image.pullPolicy }}
         env:
         - name: PGHOST
-          value: {{ .Values.database.host | quote }}
+          value: "{{ include "linktree-database.fullname" . }}-postgresql-rw"
         - name: PGPORT
-          value: {{ .Values.database.port | quote }}
+          value: "5432"
         - name: PGDATABASE
-          value: {{ .Values.database.database | quote }}
+          value: {{ .Values.postgresql.database | quote }}
         - name: PGUSER
           valueFrom:
             secretKeyRef:
-              name: {{ include "linktree.fullname" . }}-db-secret
-              key: POSTGRES_USER
+              name: {{ .Values.postgresql.credentialsSecret }}
+              key: username
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ include "linktree.fullname" . }}-db-secret
-              key: POSTGRES_PASSWORD
+              name: {{ .Values.postgresql.credentialsSecret }}
+              key: password
         command:
         - /bin/sh
         - -c
@@ -99,7 +95,7 @@ spec:
               title VARCHAR(100) NOT NULL,
               url VARCHAR(2048) NOT NULL,
               display_order INTEGER NOT NULL DEFAULT 0,
-              cover_image_url TEXT, 
+              cover_image_url TEXT,
               color_hash VARCHAR(7),
               created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
               updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -156,15 +152,15 @@ spec:
 
           -- Adicionar links de exemplo para o usuário de teste (apenas se não existirem)
           INSERT INTO links (user_id, title, url, display_order)
-          SELECT u.id, 'GitHub', 'https://github.com', 1 
-          FROM users u 
+          SELECT u.id, 'GitHub', 'https://github.com', 1
+          FROM users u
           WHERE u.username = 'teste'
           AND NOT EXISTS (
             SELECT 1 FROM links WHERE user_id = u.id AND title = 'GitHub'
           );
 
           INSERT INTO links (user_id, title, url, display_order)
-          SELECT u.id, 'LinkedIn', 'https://linkedin.com', 2 
+          SELECT u.id, 'LinkedIn', 'https://linkedin.com', 2
           FROM users u
           WHERE u.username = 'teste'
           AND NOT EXISTS (
@@ -172,7 +168,7 @@ spec:
           );
 
           INSERT INTO links (user_id, title, url, display_order)
-          SELECT u.id, 'Portfolio', 'https://example.com', 3 
+          SELECT u.id, 'Portfolio', 'https://example.com', 3
           FROM users u
           WHERE u.username = 'teste'
           AND NOT EXISTS (
@@ -181,7 +177,7 @@ spec:
 
           -- Adicionar ícones sociais de exemplo (apenas se não existirem)
           INSERT INTO social_icons (user_id, platform, url)
-          SELECT u.id, 'instagram', 'https://instagram.com/teste' 
+          SELECT u.id, 'instagram', 'https://instagram.com/teste'
           FROM users u
           WHERE u.username = 'teste'
           AND NOT EXISTS (
@@ -189,7 +185,7 @@ spec:
           );
 
           INSERT INTO social_icons (user_id, platform, url)
-          SELECT u.id, 'github', 'https://github.com/teste' 
+          SELECT u.id, 'github', 'https://github.com/teste'
           FROM users u
           WHERE u.username = 'teste'
           AND NOT EXISTS (
@@ -198,5 +194,5 @@ spec:
           EOF
           echo "Migrações concluídas com sucesso!"
         resources:
-          {{- toYaml .Values.database.migration.resources | nindent 10 }}
+          {{- toYaml .Values.migration.resources | nindent 10 }}
 {{- end }}

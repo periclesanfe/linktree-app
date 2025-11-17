@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linktree-backend.fullname" . }}-config
+  labels:
+    {{- include "linktree-backend.labels" . | nindent 4 }}
+data:
+  PORT: {{ .Values.config.port | quote }}
+  NODE_ENV: {{ .Values.config.nodeEnv | quote }}
+  CORS_ORIGIN: {{ .Values.config.corsOrigin | quote }}
+  DB_HOST: {{ .Values.database.host | quote }}
+  DB_PORT: {{ .Values.database.port | quote }}
+  DB_NAME: {{ .Values.database.database | quote }}

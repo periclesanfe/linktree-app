@@ -17,6 +17,7 @@ Este projeto é uma **implementação completa de um clone do Linktree**, desenv
 - **Cloud Native**: Arquitetura para Kubernetes, 12-Factor App
 - **Full-Stack Development**: React + Node.js + PostgreSQL
 - **Segurança e Observabilidade**: Structured logging, health checks, JWT
+- **✨ Arquitetura Modular**: 3 ArgoCD Applications independentes (Database, Backend, Frontend)
 
 ### 🎯 Objetivo
 
@@ -27,11 +28,33 @@ Criar uma aplicação de **bio links** (similar ao Linktree) onde usuários pode
 - Personalizar perfil com imagens e biografia
 - Acompanhar analytics de cliques
 
-**Diferencial**: Toda a infraestrutura é gerenciada via **GitOps com ArgoCD**, garantindo:
+**Diferencial**: Toda a infraestrutura é gerenciada via **GitOps com ArgoCD usando arquitetura modular**, garantindo:
 - ✅ Deployments declarativos e auditáveis
 - ✅ Rollback instantâneo em caso de problemas
 - ✅ Sincronização automática entre Git e Kubernetes
 - ✅ Zero downtime em updates
+- ✅ **Deploy independente por componente** (Database, Backend, Frontend)
+- ✅ **Observabilidade granular** com applications separadas
+
+---
+
+## 🏗️ Arquitetura Modular
+
+Este projeto utiliza **arquitetura modular** com **3 ArgoCD Applications separadas**:
+
+```
+ArgoCD
+├── linktree-dev-database   → PostgreSQL (CloudNativePG)
+├── linktree-dev-backend    → API Node.js + Express
+└── linktree-dev-frontend   → SPA React + Vite
+```
+
+**Benefícios:**
+- ✅ Deploy independente por componente
+- ✅ Rollback granular (sem afetar outros componentes)
+- ✅ Logs e métricas separados
+- ✅ Equipes podem trabalhar de forma autônoma
+- ✅ Versionamento independente
 
 ---
 
@@ -40,14 +63,45 @@ Criar uma aplicação de **bio links** (similar ao Linktree) onde usuários pode
 ### Pré-requisitos
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (4.0+)
+- [Minikube](https://minikube.sigs.k8s.io/docs/start/) (v1.30+)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) (v1.28+)
+- [Helm 3](https://helm.sh/docs/intro/install/) (v3.12+)
+- [ArgoCD CLI](https://argo-cd.readthedocs.io/en/stable/cli_installation/) (v2.8+)
 - [Git](https://git-scm.com/) (2.30+)
-- [Visual Studio Code](https://code.visualstudio.com/) com [Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
-### Executar Localmente (< 2 minutos)
+### Deploy Completo com ArgoCD (Arquitetura Modular)
 
 ```bash
 # 1. Clonar repositório
-git clone https://github.com/periclesanfe/linktree.git
+git clone https://github.com/periclesanfe/linktree-app.git
+cd linktree-app
+
+# 2. Executar script de apresentação (cria 3 applications separadas)
+./scripts/apresentacao.sh --auto
+
+# Aguarde ~10-12 minutos para setup completo
+
+# 3. Acessar aplicação
+# Frontend: http://localhost:5173
+# Backend:  http://localhost:8000/api/health
+# ArgoCD:   https://localhost:8080 (user: admin, senha exibida no output)
+```
+
+**O que o script faz:**
+1. ✅ Inicia Minikube (4 CPUs, 7GB RAM)
+2. ✅ Instala ArgoCD
+3. ✅ Instala CloudNativePG Operator
+4. ✅ Cria namespaces e secrets
+5. ✅ Builda imagens localmente
+6. ✅ **Cria 3 ArgoCD Applications separadas via ApplicationSet**
+7. ✅ Aguarda sync completo
+8. ✅ Configura port-forwards com validações robustas
+
+### Executar Localmente com Docker Compose (Dev Simples)
+
+```bash
+# 1. Clonar repositório
+git clone https://github.com/periclesanfe/linktree-app.git
 cd linktree
 
 # 2. Criar arquivo .env

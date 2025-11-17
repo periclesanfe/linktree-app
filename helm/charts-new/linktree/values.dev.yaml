@@ -1,0 +1,70 @@
+# Development environment values for linktree
+
+environment: development
+
+backend:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: linktree-backend
+    pullPolicy: Never
+    tag: "local"
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  config:
+    nodeEnv: development
+    corsOrigin: "http://localhost:3000,http://localhost:5173,http://linktree-dev.local"
+    port: 8000
+
+  database:
+    host: "linktree-dev-infrastructure-postgresql-rw"
+    port: "5432"
+    database: "linktree_db"
+    user: "linktree_dev_user"
+    credentialsSecret: "linktree-dev-postgres-credentials"
+
+  auth:
+    jwtSecretName: "linktree-secrets"
+    jwtSecretKey: "JWT_SECRET"
+
+  resources:
+    limits:
+      cpu: 300m
+      memory: 384Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  autoscaling:
+    enabled: false
+
+frontend:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: linktree-frontend
+    pullPolicy: Never
+    tag: "local"
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  config:
+    apiUrl: "http://linktree-dev-backend:8000"
+
+  resources:
+    limits:
+      cpu: 150m
+      memory: 192Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  autoscaling:
+    enabled: false

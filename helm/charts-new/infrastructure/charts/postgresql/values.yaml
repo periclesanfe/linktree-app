@@ -1,0 +1,86 @@
+# Default values for linktree-database
+# PostgreSQL configuration using CloudNativePG operator
+
+# Environment (dev, staging, prod)
+environment: production
+
+# PostgreSQL Cluster configuration
+postgresql:
+  # Number of instances (replicas)
+  instances: 3
+
+  # Storage configuration
+  storage:
+    size: 10Gi
+    storageClass: ""  # Use default storage class
+
+  # Database initialization
+  database: linktree_db
+  owner: linktree_user
+
+  # Credentials secret name (must be created separately)
+  credentialsSecret: linktree-postgres-credentials
+
+  # Backup configuration (optional)
+  backup:
+    enabled: false
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retentionPolicy: "30d"
+
+  # Resource limits and requests
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+  # PostgreSQL configuration parameters
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "2621kB"
+      min_wal_size: "1GB"
+      max_wal_size: "4GB"
+
+# Database migration job
+migration:
+  enabled: true
+
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+
+  # Time to keep the job after completion (in seconds)
+  ttlSecondsAfterFinished: 300
+
+  # Number of retries before considering job as failed
+  backoffLimit: 3
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Monitoring (optional - requires Prometheus operator)
+monitoring:
+  enabled: false
+  podMonitor:
+    enabled: false
+    interval: 30s
+
+nameOverride: ""
+fullnameOverride: ""

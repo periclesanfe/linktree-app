@@ -1,0 +1,56 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ include "linktree-database.fullname" . }}-postgresql
+  labels:
+    {{- include "linktree-database.labels" . | nindent 4 }}
+spec:
+  instances: {{ .Values.postgresql.instances }}
+
+  storage:
+    size: {{ .Values.postgresql.storage.size }}
+    {{- if .Values.postgresql.storage.storageClass }}
+    storageClass: {{ .Values.postgresql.storage.storageClass }}
+    {{- end }}
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.postgresql.database }}
+      owner: {{ .Values.postgresql.owner }}
+      secret:
+        name: {{ .Values.postgresql.credentialsSecret }}
+
+  {{- if .Values.postgresql.resources }}
+  resources:
+    {{- toYaml .Values.postgresql.resources | nindent 4 }}
+  {{- end }}
+
+  {{- if .Values.postgresql.postgresql }}
+  postgresql:
+    {{- if .Values.postgresql.postgresql.parameters }}
+    parameters:
+      {{- toYaml .Values.postgresql.postgresql.parameters | nindent 6 }}
+    {{- end }}
+  {{- end }}
+
+  {{- if and .Values.postgresql.backup .Values.postgresql.backup.enabled }}
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://linktree-backups/{{ .Release.Namespace }}/
+      s3Credentials:
+        accessKeyId:
+          name: backup-storage-creds
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: backup-storage-creds
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+        maxParallel: 8
+    retentionPolicy: {{ .Values.postgresql.backup.retentionPolicy }}
+  {{- end }}
+
+  {{- if and .Values.monitoring .Values.monitoring.enabled }}
+  monitoring:
+    enablePodMonitor: {{ .Values.monitoring.podMonitor.enabled }}
+  {{- end }}

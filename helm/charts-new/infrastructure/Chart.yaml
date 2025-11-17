@@ -1,0 +1,20 @@
+apiVersion: v2
+name: linktree-infrastructure
+description: Infrastructure components for Linktree (Database, Redis, Monitoring)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - infrastructure
+  - postgresql
+  - database
+  - cloudnativepg
+maintainers:
+  - name: periclesanfe
+
+# Dependencies (subchart)
+dependencies:
+  - name: postgresql
+    version: "1.0.0"
+    repository: "file://./charts/postgresql"
+    condition: postgresql.enabled

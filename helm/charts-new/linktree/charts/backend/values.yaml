@@ -1,0 +1,104 @@
+# Default values for linktree-backend
+
+# Environment (dev, staging, prod)
+environment: production
+
+# Number of replicas
+replicaCount: 3
+
+# Image configuration
+image:
+  repository: ghcr.io/periclesanfe/linktree-backend
+  pullPolicy: IfNotPresent
+  tag: ""  # Defaults to chart appVersion if not set
+  pullSecrets: []
+  # - name: ghcr-secret
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+  annotations: {}
+
+# Application configuration
+config:
+  # Node.js environment
+  nodeEnv: production
+
+  # CORS origins (comma-separated)
+  corsOrigin: "*"
+
+  # Port number
+  port: 8000
+
+# Database connection
+database:
+  # Database host (should point to PostgreSQL service)
+  host: "linktree-database-postgresql-rw"
+  port: "5432"
+  database: "linktree_db"
+  user: "linktree_user"
+
+  # Secret name containing database credentials
+  credentialsSecret: "linktree-postgres-credentials"
+
+# Authentication configuration
+auth:
+  # Secret name containing JWT_SECRET
+  jwtSecretName: "linktree-secrets"
+  jwtSecretKey: "JWT_SECRET"
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Liveness probe configuration
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Readiness probe configuration
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Autoscaling configuration
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity rules
+affinity: {}
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+nameOverride: ""
+fullnameOverride: ""
