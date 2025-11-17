@@ -271,10 +271,10 @@ spec:
 EOF
 
 print_info "Aguardando cluster PostgreSQL ficar pronto (2-3 minutos)..."
-kubectl wait --for=condition=ready cluster/linktree-dev-postgres -n dev --timeout=300s
+kubectl wait --for=condition=ready cluster/linktree-dev-postgresql -n dev --timeout=300s
 
 print_info "Pods do PostgreSQL:"
-kubectl get pods -n dev -l cnpg.io/cluster=linktree-dev-postgres
+kubectl get pods -n dev -l cnpg.io/cluster=linktree-dev-postgresql
 
 print_success "PostgreSQL rodando"
 wait_for_user
@@ -286,11 +286,11 @@ print_step "PASSO 8: Inicializando schema do banco de dados"
 echo ""
 
 print_info "Obtendo credenciais do banco..."
-DB_USER=$(kubectl get secret linktree-dev-postgres-app -n dev -o jsonpath='{.data.username}' | base64 -d)
-DB_PASSWORD=$(kubectl get secret linktree-dev-postgres-app -n dev -o jsonpath='{.data.password}' | base64 -d)
+DB_USER=$(kubectl get secret linktree-dev-postgresql-app -n dev -o jsonpath='{.data.username}' | base64 -d)
+DB_PASSWORD=$(kubectl get secret linktree-dev-postgresql-app -n dev -o jsonpath='{.data.password}' | base64 -d)
 
 print_info "Aplicando migrations..."
-kubectl exec -n dev linktree-dev-postgres-1 -- bash -c "PGPASSWORD='$DB_PASSWORD' psql -h localhost -U $DB_USER -d linktree_db" <<EOF
+kubectl exec -n dev linktree-dev-postgresql-1 -- bash -c "PGPASSWORD='$DB_PASSWORD' psql -h localhost -U $DB_USER -d linktree_db" <<EOF
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -343,7 +343,7 @@ CREATE INDEX IF NOT EXISTS idx_analytics_clicked_at ON analytics_clicks(clicked_
 EOF
 
 print_info "Verificando tabelas criadas..."
-kubectl exec -n dev linktree-dev-postgres-1 -- bash -c "PGPASSWORD='$DB_PASSWORD' psql -h localhost -U $DB_USER -d linktree_db -c '\dt'"
+kubectl exec -n dev linktree-dev-postgresql-1 -- bash -c "PGPASSWORD='$DB_PASSWORD' psql -h localhost -U $DB_USER -d linktree_db -c '\dt'"
 
 print_success "Schema do banco inicializado"
 wait_for_user
@@ -381,13 +381,13 @@ print_info "Validando Helm chart..."
 helm lint .
 
 print_info "Obtendo senha do banco..."
-DB_PASSWORD=$(kubectl get secret linktree-dev-postgres-app -n dev -o jsonpath='{.data.password}' | base64 -d)
+DB_PASSWORD=$(kubectl get secret linktree-dev-postgresql-app -n dev -o jsonpath='{.data.password}' | base64 -d)
 
 print_info "Instalando aplicação..."
 helm upgrade --install linktree-dev . \
   -f values.dev.yaml \
   -n dev \
-  --set backend.database.host=linktree-dev-postgres-rw \
+  --set backend.database.host=linktree-dev-postgresql-rw \
   --set backend.database.password="$DB_PASSWORD"
 
 print_info "Aguardando deployments ficarem prontos..."
@@ -491,7 +491,7 @@ echo -e "  ${CYAN}Username:${NC} admin"
 echo -e "  ${CYAN}Password:${NC} $ARGOCD_PASSWORD"
 echo ""
 echo -e "${GREEN}${DATABASE} Banco de Dados:${NC}"
-echo -e "  ${CYAN}Host:${NC}     linktree-dev-postgres-rw.dev.svc.cluster.local"
+echo -e "  ${CYAN}Host:${NC}     linktree-dev-postgresql-rw.dev.svc.cluster.local"
 echo -e "  ${CYAN}Database:${NC} linktree_db"
 echo -e "  ${CYAN}User:${NC}     linktree_dev_user"
 echo ""
@@ -502,7 +502,7 @@ echo -e "${YELLOW}💡 Dicas para Apresentação:${NC}"
 echo -e "  1. Acesse ArgoCD UI e mostre a aplicação sincronizada"
 echo -e "  2. Teste self-healing: kubectl scale deployment/linktree-dev-frontend -n dev --replicas=5"
 echo -e "  3. Mostre rollback: argocd app history linktree-dev"
-echo -e "  4. Demonstre HA: kubectl delete pod linktree-dev-postgres-1 -n dev"
+echo -e "  4. Demonstre HA: kubectl delete pod linktree-dev-postgresql-1 -n dev"
 echo ""
 echo -e "${BLUE}📚 Ver guia completo:${NC} cat /Users/xxmra/Documents/GitHub/BRICELE-LINKTREE/linktree/APRESENTACAO.md"
 echo ""
