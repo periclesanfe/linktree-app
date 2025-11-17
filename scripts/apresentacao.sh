@@ -419,7 +419,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/periclesanfe/linktree.git
+    repoURL: https://github.com/periclesanfe/linktree-app.git
     targetRevision: HEAD
     path: helm
     helm:
