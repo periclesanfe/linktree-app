@@ -20,6 +20,8 @@ function App() {
           </Route>
           <Route path="/profile/:username" element={<ProfilePage />} />
           <Route path="/:username" element={<ProfilePage />} />
+
+          {/* Redirect all unmapped routes to login page */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
