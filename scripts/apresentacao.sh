@@ -250,7 +250,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: linktree-dev-postgres
+  name: linktree-dev-postgresql
   namespace: dev
 spec:
   instances: 1

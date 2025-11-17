@@ -40,7 +40,7 @@ echo -e "${GREEN}✓${NC} Helm release removido\n"
 
 # 4. Remover cluster PostgreSQL
 echo -e "${BLUE}→${NC} Removendo cluster PostgreSQL..."
-kubectl delete cluster linktree-dev-postgres -n dev --wait=false 2>/dev/null || true
+kubectl delete cluster linktree-dev-postgresql -n dev --wait=false 2>/dev/null || true
 sleep 3
 echo -e "${GREEN}✓${NC} Cluster PostgreSQL removido\n"
 
