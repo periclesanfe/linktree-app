@@ -14,11 +14,13 @@ maintainers:
 
 # Dependencies (subcharts)
 dependencies:
-  - name: backend
+  - name: linktree-backend
+    alias: backend
     version: "1.0.0"
     repository: "file://./charts/backend"
     condition: backend.enabled
-  - name: frontend
+  - name: linktree-frontend
+    alias: frontend
     version: "1.0.0"
     repository: "file://./charts/frontend"
     condition: frontend.enabled
