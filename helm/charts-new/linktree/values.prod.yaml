@@ -27,7 +27,7 @@ backend:
     port: 8000
 
   database:
-    host: "linktree-prod-infrastructure-postgresql-rw"
+    host: "linktree-prod-postgresql-rw"
     port: "5432"
     database: "linktree_db"
     user: "linktree_prod_user"
