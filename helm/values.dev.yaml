@@ -8,15 +8,15 @@ backend:
   replicaCount: 1
   
   image:
-    repository: ghcr.io/periclesanfe/linktree-backend
-    pullPolicy: IfNotPresent
-    tag: "dev-latest"
+    repository: linktree-backend
+    pullPolicy: Never
+    tag: "local"
   
   service:
     type: ClusterIP
     port: 8000
   
-  corsOrigin: "http://localhost:3000,http://linktree-dev.local"
+  corsOrigin: "http://localhost:3000,http://localhost:5173,http://linktree-dev.local"
   
   resources:
     limits:
@@ -31,9 +31,9 @@ frontend:
   replicaCount: 1
   
   image:
-    repository: ghcr.io/periclesanfe/linktree-frontend
-    pullPolicy: IfNotPresent
-    tag: "dev-latest"
+    repository: linktree-frontend
+    pullPolicy: Never
+    tag: "local"
   
   service:
     type: ClusterIP
@@ -52,7 +52,7 @@ frontend:
 # Database configuration for dev
 database:
   external: true
-  host: "linktree-dev-postgresql"
+  host: "linktree-dev-postgresql-rw"
   port: "5432"
   database: "linktree_dev"
   user: "linktree_dev_user"
