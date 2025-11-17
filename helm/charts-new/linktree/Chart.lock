@@ -1,9 +1,9 @@
 dependencies:
-- name: backend
+- name: linktree-backend
   repository: file://./charts/backend
   version: 1.0.0
-- name: frontend
+- name: linktree-frontend
   repository: file://./charts/frontend
   version: 1.0.0
-digest: sha256:9bbeb99eb50bcc143e4ef68c5002bf4bf2fcb69a7805b2fb9a5917dd560d09b0
-generated: "2025-11-17T18:42:02.786297-03:00"
+digest: sha256:299d68306643509b025b8327ff2ce3cd0a995f74f3ab9fa99737271f62a13608
+generated: "2025-11-17T19:04:10.509982-03:00"
