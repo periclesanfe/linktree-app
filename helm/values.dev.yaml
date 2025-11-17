@@ -54,7 +54,7 @@ database:
   external: true
   host: "linktree-dev-postgresql-rw"
   port: "5432"
-  database: "linktree_dev"
+  database: "linktree_db"
   user: "linktree_dev_user"
   password: "dev_password_123"  # TODO: Move to sealed secret or external secret
   
