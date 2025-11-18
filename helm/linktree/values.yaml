@@ -26,16 +26,13 @@ backend:
     corsOrigin: "*"
     port: 8000
 
+  # Secret único contendo todas as credenciais (JWT_SECRET, DB_USER, DB_PASSWORD)
+  secretName: "linktree-secrets"
+
   database:
     host: "linktree-infrastructure-postgresql-rw"
     port: "5432"
     database: "linktree_db"
-    user: "linktree_user"
-    credentialsSecret: "linktree-postgres-credentials"
-
-  auth:
-    jwtSecretName: "linktree-secrets"
-    jwtSecretKey: "JWT_SECRET"
 
   resources:
     limits:

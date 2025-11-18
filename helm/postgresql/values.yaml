@@ -26,11 +26,13 @@ cluster:
       cpu: 500m
       memory: 512Mi
 
-# Credentials secret
+# Secret único contendo credenciais (usado pelo backend também)
+# Chaves esperadas: DB_USER, DB_PASSWORD, JWT_SECRET
 credentials:
-  secretName: linktree-postgres-credentials
+  secretName: linktree-secrets
   username: linktree_user
   password: change_me_in_production
+  jwtSecret: change_me_in_production
 
 # Database initialization
 initdb:

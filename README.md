@@ -626,21 +626,90 @@ const result = await pool.query(
 
 #### 7. **Secrets Management**
 
-- ❌ **Nunca** commitamos secrets no Git
-- ✅ **Dev**: `.env` (git ignored)
-- ✅ **Prod**: Kubernetes Secrets
+**Padrão Implementado**: Secret único por namespace com `envFrom`.
+
+**Estrutura:**
+- ✅ **Nome padronizado**: `linktree-secrets` (mesmo nome em todos os ambientes)
+- ✅ **Injeção com envFrom**: Todas as variáveis injetadas de uma vez (best practice)
+- ✅ **Secret gerenciado pelo PostgreSQL Helm Chart**: Criado automaticamente via GitOps
+
+**Chaves esperadas no secret:**
 
 ```yaml
-# Exemplo: Kubernetes Secret (base64 encoded)
 apiVersion: v1
 kind: Secret
 metadata:
   name: linktree-secrets
+  namespace: dev  # ou prod
 type: Opaque
-data:
-  JWT_SECRET: <base64-encoded-secret>
-  DB_PASSWORD: <base64-encoded-password>
+stringData:
+  # Credenciais PostgreSQL
+  username: linktree_dev_user
+  password: dev_password_123
+  # Credenciais Backend (formato envFrom)
+  DB_USER: linktree_dev_user
+  DB_PASSWORD: dev_password_123
+  JWT_SECRET: dev_jwt_secret_change_me
 ```
+
+**Uso no Backend Deployment:**
+
+```yaml
+# Antes (injeção manual de cada variável) ❌
+env:
+- name: DB_USER
+  valueFrom:
+    secretKeyRef:
+      name: some-secret
+      key: username
+- name: DB_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: some-secret
+      key: password
+# ... +10 linhas
+
+# Depois (envFrom - best practice) ✅
+envFrom:
+- configMapRef:
+    name: linktree-backend-config  # Non-sensitive configs
+- secretRef:
+    name: linktree-secrets  # All secrets at once
+env:
+- name: DATABASE_URL  # Computed from envFrom vars
+  value: "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+```
+
+**Benefícios:**
+- ✅ **Menos código**: 3 linhas vs 30+ linhas por deployment
+- ✅ **Manutenção mais fácil**: Adicionar nova variável não requer mudar deployment
+- ✅ **Padrão Kubernetes**: `envFrom` é a prática recomendada
+- ✅ **Mesmo nome cross-env**: Secret `linktree-secrets` existe em dev e prod com valores diferentes
+
+**Criação manual do secret (se necessário):**
+
+```bash
+# DEV
+kubectl create secret generic linktree-secrets -n dev \
+  --from-literal=username=linktree_dev_user \
+  --from-literal=password=dev_password_123 \
+  --from-literal=DB_USER=linktree_dev_user \
+  --from-literal=DB_PASSWORD=dev_password_123 \
+  --from-literal=JWT_SECRET="$(openssl rand -base64 32)"
+
+# PROD
+kubectl create secret generic linktree-secrets -n prod \
+  --from-literal=username=linktree_prod_user \
+  --from-literal=password=STRONG_PROD_PASSWORD \
+  --from-literal=DB_USER=linktree_prod_user \
+  --from-literal=DB_PASSWORD=STRONG_PROD_PASSWORD \
+  --from-literal=JWT_SECRET="$(openssl rand -base64 32)"
+```
+
+**Segurança:**
+- ❌ **Nunca** commitamos secrets no Git
+- ✅ **Dev**: Valores padrão no values.yaml (não-sensíveis para dev)
+- ✅ **Prod**: Override em values.prod.yaml ou External Secrets Operator
 
 ---
 

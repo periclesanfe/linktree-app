@@ -20,16 +20,13 @@ backend:
     corsOrigin: "http://localhost:3000,http://localhost:5173,http://linktree-dev.local"
     port: 8000
 
+  # Secret único contendo todas as credenciais
+  secretName: "linktree-secrets"
+
   database:
     host: "linktree-dev-postgresql-rw"
     port: "5432"
     database: "linktree_db"
-    user: "linktree_dev_user"
-    credentialsSecret: "linktree-dev-postgres-credentials"
-
-  auth:
-    jwtSecretName: "linktree-secrets"
-    jwtSecretKey: "JWT_SECRET"
 
   resources:
     limits:

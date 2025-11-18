@@ -33,54 +33,16 @@ spec:
         - name: http
           containerPort: {{ .Values.backend.service.targetPort }}
           protocol: TCP
+        # Injetar secrets e configmaps usando envFrom (best practice)
+        envFrom:
+        - configMapRef:
+            name: {{ include "linktree.backend.fullname" . }}-config
+        - secretRef:
+            name: {{ .Values.backend.secretName }}
+        # Variável computada DATABASE_URL
         env:
-        - name: PORT
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "linktree.backend.fullname" . }}-config
-              key: PORT
-        - name: NODE_ENV
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "linktree.backend.fullname" . }}-config
-              key: NODE_ENV
-        - name: CORS_ORIGIN
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "linktree.backend.fullname" . }}-config
-              key: CORS_ORIGIN
-        - name: DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "linktree.backend.fullname" . }}-config
-              key: DB_HOST
-        - name: DB_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "linktree.backend.fullname" . }}-config
-              key: DB_PORT
-        - name: DB_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: {{ include "linktree.backend.fullname" . }}-config
-              key: DB_NAME
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.backend.database.credentialsSecret }}
-              key: username
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.backend.database.credentialsSecret }}
-              key: password
         - name: DATABASE_URL
           value: "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.backend.auth.jwtSecretName }}
-              key: {{ .Values.backend.auth.jwtSecretKey }}
         livenessProbe:
           {{- toYaml .Values.backend.livenessProbe | nindent 10 }}
         readinessProbe:

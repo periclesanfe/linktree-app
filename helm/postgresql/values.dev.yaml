@@ -22,6 +22,7 @@ cluster:
       memory: 512Mi
 
 credentials:
-  secretName: linktree-dev-postgres-credentials
+  secretName: linktree-secrets
   username: linktree_dev_user
   password: dev_password_123
+  jwtSecret: dev_jwt_secret_change_me

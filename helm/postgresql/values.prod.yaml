@@ -22,6 +22,7 @@ cluster:
       memory: 2Gi
 
 credentials:
-  secretName: linktree-prod-postgres-credentials
+  secretName: linktree-secrets
   username: linktree_prod_user
   password: prod_password_change_me
+  jwtSecret: prod_jwt_secret_change_me
