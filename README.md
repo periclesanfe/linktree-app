@@ -38,23 +38,49 @@ Criar uma aplicação de **bio links** (similar ao Linktree) onde usuários pode
 
 ---
 
-## 🏗️ Arquitetura Modular
+## 🏗️ Arquitetura App of Apps (GitOps Avançado)
 
-Este projeto utiliza **arquitetura modular** com **3 ArgoCD Applications separadas**:
+Este projeto utiliza o padrão **App of Apps do ArgoCD**, onde uma aplicação raiz gerencia automaticamente múltiplas aplicações filhas:
 
 ```
-ArgoCD
-├── linktree-dev-database   → PostgreSQL (CloudNativePG)
-├── linktree-dev-backend    → API Node.js + Express
-└── linktree-dev-frontend   → SPA React + Vite
+ArgoCD App of Apps
+│
+├── linktree-dev-root (Root Application)
+│   ├── → linktree-dev-infrastructure (PostgreSQL)
+│   ├── → linktree-dev-backend        (API Node.js)
+│   └── → linktree-dev-frontend       (React SPA)
+│
+└── linktree-prod-root (Root Application)
+    ├── → linktree-prod-infrastructure (PostgreSQL HA - 3 replicas)
+    ├── → linktree-prod-backend        (API Node.js - 3 replicas)
+    └── → linktree-prod-frontend       (React SPA)
 ```
 
-**Benefícios:**
-- ✅ Deploy independente por componente
-- ✅ Rollback granular (sem afetar outros componentes)
-- ✅ Logs e métricas separados
-- ✅ Equipes podem trabalhar de forma autônoma
-- ✅ Versionamento independente
+**Benefícios do App of Apps:**
+- ✅ **Deploy Declarativo**: Uma única aplicação raiz cria todas as filhas automaticamente
+- ✅ **Separação de Infraestrutura**: PostgreSQL gerenciado independentemente (prune: false)
+- ✅ **Deploy Independente**: Backend, Frontend e Infra podem atualizar separadamente
+- ✅ **Rollback Granular**: Reverter apenas o componente problemático
+- ✅ **Sync Policies Diferentes**: Infra com proteção extra, Apps com auto-healing
+- ✅ **Versionamento Independente**: Cada componente tem seu próprio ciclo de vida
+- ✅ **Observabilidade Granular**: Logs, métricas e status por componente
+
+**Estrutura de Diretórios:**
+```
+argocd/
+├── root-apps/
+│   ├── dev.yaml          # Root app que cria DEV
+│   └── prod.yaml         # Root app que cria PROD
+└── apps/
+    ├── dev/
+    │   ├── infrastructure.yaml  # PostgreSQL (prune: false)
+    │   ├── backend.yaml         # API com HPA
+    │   └── frontend.yaml        # SPA com autoscaling
+    └── prod/
+        ├── infrastructure.yaml  # PostgreSQL HA (3 replicas)
+        ├── backend.yaml         # API HA (3 replicas)
+        └── frontend.yaml        # SPA com CDN
+```
 
 ---
 
@@ -69,14 +95,14 @@ ArgoCD
 - [ArgoCD CLI](https://argo-cd.readthedocs.io/en/stable/cli_installation/) (v2.8+)
 - [Git](https://git-scm.com/) (2.30+)
 
-### Deploy Completo com ArgoCD (Arquitetura Modular)
+### Deploy Completo com ArgoCD (App of Apps)
 
 ```bash
 # 1. Clonar repositório
 git clone https://github.com/periclesanfe/linktree-app.git
 cd linktree-app
 
-# 2. Executar script de apresentação (cria 3 applications separadas)
+# 2. Executar script de apresentação (automatizado)
 ./scripts/apresentacao.sh --auto
 
 # Aguarde ~10-12 minutos para setup completo
@@ -91,11 +117,38 @@ cd linktree-app
 1. ✅ Inicia Minikube (4 CPUs, 7GB RAM)
 2. ✅ Instala ArgoCD
 3. ✅ Instala CloudNativePG Operator
-4. ✅ Cria namespaces e secrets
-5. ✅ Builda imagens localmente
-6. ✅ **Cria 3 ArgoCD Applications separadas via ApplicationSet**
-7. ✅ Aguarda sync completo
-8. ✅ Configura port-forwards com validações robustas
+4. ✅ Cria namespaces (dev, prod) e secrets
+5. ✅ Builda imagens localmente (frontend e backend)
+6. ✅ **Aplica Root Application (App of Apps)**
+7. ✅ Root app cria automaticamente 3 child apps (Infrastructure, Backend, Frontend)
+8. ✅ Aguarda sync completo de todas as aplicações
+9. ✅ Configura port-forwards com validações robustas
+
+**Deploy Manual (App of Apps):**
+
+```bash
+# Deploy DEV
+kubectl apply -f argocd/root-apps/dev.yaml
+
+# A root app cria automaticamente:
+# - linktree-dev-infrastructure (PostgreSQL)
+# - linktree-dev-backend
+# - linktree-dev-frontend
+
+# Deploy PROD
+kubectl apply -f argocd/root-apps/prod.yaml
+
+# A root app cria automaticamente:
+# - linktree-prod-infrastructure (PostgreSQL HA - 3 replicas)
+# - linktree-prod-backend (3 replicas)
+# - linktree-prod-frontend
+
+# Verificar status
+argocd app list
+argocd app get linktree-dev-infrastructure
+argocd app get linktree-dev-backend
+argocd app get linktree-dev-frontend
+```
 
 ### Executar Localmente com Docker Compose (Dev Simples)
 
@@ -203,7 +256,71 @@ Developer     GitHub         GitHub         Docker          GitOps          Argo
 
 ### Decisões Arquiteturais
 
-#### 1. **Arquitetura de 3 Camadas**
+#### 1. **App of Apps Pattern (ArgoCD)**
+
+**Decisão**: Usar o padrão App of Apps ao invés de uma única aplicação monolítica.
+
+**Por quê?**
+- ✅ **Separação de Infraestrutura**: PostgreSQL gerenciado independentemente com proteção contra deleção acidental (`prune: false`)
+- ✅ **Deploy Declarativo**: Uma única aplicação raiz cria e gerencia todas as child apps automaticamente
+- ✅ **Sync Policies Customizadas**: Cada componente tem sua própria política (infra sem auto-prune, apps com auto-healing)
+- ✅ **Rollback Granular**: Podemos reverter apenas o backend sem afetar frontend ou banco de dados
+- ✅ **Observabilidade Independente**: Status, logs e métricas separados por componente
+- ✅ **Versionamento Independente**: Backend pode estar na v2.0 enquanto frontend está na v1.5
+
+**Estrutura:**
+
+```yaml
+# argocd/root-apps/dev.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: linktree-dev-root
+spec:
+  source:
+    path: argocd/apps/dev  # Aponta para diretório com child apps
+  syncPolicy:
+    automated:
+      prune: true  # Root app gerencia lifecycle das child apps
+      selfHeal: true
+```
+
+**Comparação com Arquitetura Anterior:**
+
+| Aspecto | Monolítica (Antes) | App of Apps (Atual) |
+|---------|-------------------|---------------------|
+| **Deploy** | 1 app com subcharts | 1 root + 3 child apps |
+| **Rollback** | Tudo ou nada | Granular por componente |
+| **Sync Policies** | Mesma para todos | Customizada por componente |
+| **PostgreSQL** | Risco de deleção acidental | Protegido com prune: false |
+| **Observabilidade** | Agregada | Separada por componente |
+| **Escalabilidade** | Difícil gerenciar muitos componentes | Fácil adicionar novos componentes |
+
+**Evidência de Benefícios:**
+
+```bash
+# Cenário: Bug no backend em produção
+# Antes (Monolítica):
+argocd app rollback linktree-prod  # Reverte TUDO (backend, frontend, db)
+
+# Depois (App of Apps):
+argocd app rollback linktree-prod-backend  # Reverte APENAS backend
+# Frontend e PostgreSQL não são afetados!
+```
+
+**Proteção de Infraestrutura:**
+
+```yaml
+# argocd/apps/prod/infrastructure.yaml
+syncPolicy:
+  automated:
+    prune: false  # NUNCA deletar PostgreSQL automaticamente
+    selfHeal: true
+```
+
+Se alguém deletar acidentalmente o arquivo do PostgreSQL do Git, o ArgoCD **não vai deletar o banco de dados** em produção.
+
+#### 2. **Arquitetura de 3 Camadas**
 
 **Decisão**: Separar frontend, backend e banco de dados em serviços independentes.
 
@@ -642,17 +759,140 @@ strategy:
 
 ### Rollback
 
+**Rollback com App of Apps:**
+
 ```bash
-# Via ArgoCD (recomendado)
-argocd app history linktree-prod  # Ver histórico
-argocd app rollback linktree-prod 5  # Rollback para revisão 5
+# Rollback de componente específico (RECOMENDADO)
+argocd app history linktree-prod-backend  # Ver histórico do backend
+argocd app rollback linktree-prod-backend 5  # Rollback apenas backend
 
-# Via Helm
-helm rollback linktree-prod  # Rollback para versão anterior
+# Rollback de múltiplos componentes
+argocd app rollback linktree-prod-backend
+argocd app rollback linktree-prod-frontend
+# PostgreSQL não é afetado!
 
-# Via Git (rollback do código)
+# Rollback via Git (universal)
 git revert <commit-hash>
-git push  # ArgoCD detecta e sincroniza automaticamente
+git push  # ArgoCD detecta e sincroniza automaticamente todas as child apps
+
+# Rollback da root app (raramente necessário)
+argocd app rollback linktree-prod-root  # Reverte estrutura das child apps
+```
+
+**Vantagem**: Com App of Apps, você pode reverter apenas o componente problemático sem afetar os demais.
+
+---
+
+## 🗄️ Database Management
+
+### PostgreSQL com CloudNativePG
+
+O PostgreSQL é gerenciado via **CloudNativePG Operator**, trazendo recursos enterprise para Kubernetes:
+
+**Características:**
+- ✅ **High Availability**: 3 replicas em produção com streaming replication
+- ✅ **Automatic Failover**: Eleição de novo primário em ~10 segundos
+- ✅ **Backup Automático**: Point-in-time recovery (PITR)
+- ✅ **Managed via GitOps**: Cluster declarado em `helm/postgresql/templates/cluster.yaml`
+
+**Helm Chart PostgreSQL:**
+
+```
+helm/postgresql/
+├── Chart.yaml              # Chart metadata
+├── values.yaml             # Configuração padrão
+├── values.dev.yaml         # 1 replica para dev
+├── values.prod.yaml        # 3 replicas para HA em prod
+└── templates/
+    ├── cluster.yaml        # CloudNativePG Cluster resource
+    ├── secret.yaml         # Credenciais do PostgreSQL
+    └── migration-job.yaml  # Migration job (desabilitado)
+```
+
+**Configuração por Ambiente:**
+
+| Ambiente | Replicas | Storage | Recursos CPU/Mem |
+|----------|----------|---------|------------------|
+| **DEV**  | 1        | 1Gi     | 100m/256Mi → 500m/512Mi |
+| **PROD** | 3 (HA)   | 10Gi    | 500m/1Gi → 2000m/4Gi |
+
+### Database Migrations
+
+**Status Atual**: Migrations executadas manualmente via `kubectl exec`.
+
+**Por quê manual?**
+- CloudNativePG usa autenticação PostgreSQL que não é compatível com jobs que tentam conectar via senha
+- Tentamos automatizar via Kubernetes Job, mas falhava com erro de autenticação
+- Solução: Desabilitamos o migration job e documentamos o processo manual
+
+**Como executar migrations:**
+
+```bash
+# DEV - Schema inicial
+kubectl exec -i -n dev linktree-dev-postgresql-1 -- \
+  psql -U postgres -d linktree_db < db-init/init.sql
+
+# DEV - Seed data (dados de teste)
+kubectl exec -i -n dev linktree-dev-postgresql-1 -- \
+  psql -U postgres -d linktree_db < db-init/seed-data.sql
+
+# PROD - Schema inicial (primeiro deploy apenas)
+kubectl exec -i -n prod linktree-prod-postgresql-1 -- \
+  psql -U postgres -d linktree_db < db-init/init.sql
+
+# PROD - Seed data (CUIDADO: apenas para testes iniciais)
+kubectl exec -i -n prod linktree-prod-postgresql-1 -- \
+  psql -U postgres -d linktree_db < db-init/seed-data.sql
+```
+
+**Importante**:
+- Execute migrations **após** o PostgreSQL cluster estar pronto
+- Verifique status: `kubectl get cluster -n dev` → Status deve ser "Cluster in healthy state"
+- Seed data contém usuários de teste - **não usar em produção real**
+
+**Verificar dados:**
+
+```bash
+# Verificar se tabelas foram criadas
+kubectl exec -i -n dev linktree-dev-postgresql-1 -- \
+  psql -U postgres -d linktree_db -c "\dt"
+
+# Contar usuários
+kubectl exec -i -n dev linktree-dev-postgresql-1 -- \
+  psql -U postgres -d linktree_db -c "SELECT COUNT(*) FROM users;"
+
+# Ver todos os links
+kubectl exec -i -n dev linktree-dev-postgresql-1 -- \
+  psql -U postgres -d linktree_db -c "SELECT title, url FROM links LIMIT 5;"
+```
+
+### Proteção do PostgreSQL
+
+**App of Apps implementa proteção extra para o banco de dados:**
+
+```yaml
+# argocd/apps/{env}/infrastructure.yaml
+syncPolicy:
+  automated:
+    prune: false  # CRÍTICO: Nunca deletar PostgreSQL automaticamente
+    selfHeal: true
+```
+
+**O que isso significa:**
+- ❌ Se você deletar `helm/postgresql/` do Git, o ArgoCD **NÃO** vai deletar o PostgreSQL
+- ✅ Se você modificar configurações, o ArgoCD **VAI** aplicar as mudanças (selfHeal)
+- ✅ Deleção manual do PostgreSQL requer comando explícito via kubectl
+
+**Backup Manual (antes de mudanças críticas):**
+
+```bash
+# Exportar backup completo
+kubectl exec -i -n prod linktree-prod-postgresql-1 -- \
+  pg_dump -U postgres linktree_db > backup-$(date +%Y%m%d).sql
+
+# Restaurar backup
+kubectl exec -i -n prod linktree-prod-postgresql-1 -- \
+  psql -U postgres -d linktree_db < backup-20241117.sql
 ```
 
 ---
