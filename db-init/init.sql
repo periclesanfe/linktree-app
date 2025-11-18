@@ -29,6 +29,8 @@ CREATE TABLE users (
     bio TEXT,
     profile_image_url TEXT,
     background_image_url TEXT,
+    theme VARCHAR(50) DEFAULT 'light',
+    accent_color VARCHAR(50) DEFAULT '#000000',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -46,7 +48,8 @@ CREATE TABLE links (
     title VARCHAR(100) NOT NULL,
     url VARCHAR(2048) NOT NULL,
     display_order INTEGER NOT NULL DEFAULT 0,
-    cover_image_url TEXT, 
+    active BOOLEAN DEFAULT true,
+    cover_image_url TEXT,
     color_hash VARCHAR(7),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -85,3 +88,13 @@ CREATE TABLE analytics_clicks (
 );
 
 CREATE INDEX idx_analytics_clicks_link_id ON analytics_clicks(link_id);
+CREATE INDEX IF NOT EXISTS idx_links_user_id ON links(user_id);
+CREATE INDEX IF NOT EXISTS idx_links_display_order ON links(display_order);
+CREATE INDEX IF NOT EXISTS idx_social_icons_user_id ON social_icons(user_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_clicked_at ON analytics_clicks(clicked_at);
+
+-- Grant permissions to application user
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO linktree_dev_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO linktree_dev_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO linktree_dev_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO linktree_dev_user;
