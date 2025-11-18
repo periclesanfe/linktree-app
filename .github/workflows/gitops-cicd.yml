@@ -193,24 +193,43 @@ jobs:
         id: sha
         run: echo "short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
       
-      - name: Update image tags in Application
+      - name: Update image tags in App of Apps
         run: |
-          APP_FILE="environments/${{ steps.env.outputs.environment }}/application.yaml"
-          
-          if [ -f "$APP_FILE" ]; then
-            yq eval -i '
-              .spec.source.helm.parameters = [
-                {"name": "backend.image.tag", "value": "${{ steps.sha.outputs.short }}"},
-                {"name": "frontend.image.tag", "value": "${{ steps.sha.outputs.short }}"}
-              ]
-            ' "$APP_FILE"
-            
-            echo "✅ Updated $APP_FILE"
-            cat "$APP_FILE"
+          ENV="${{ steps.env.outputs.environment }}"
+          SHORT_SHA="${{ steps.sha.outputs.short }}"
+          BACKEND_IMAGE="ghcr.io/${{ github.repository_owner }}/linktree-backend"
+          FRONTEND_IMAGE="ghcr.io/${{ github.repository_owner }}/linktree-frontend"
+
+          # Update backend app
+          BACKEND_FILE="argocd/apps/${ENV}/backend.yaml"
+          if [ -f "$BACKEND_FILE" ]; then
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.repository\").value = \"${BACKEND_IMAGE}\"" "$BACKEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.tag\").value = \"${SHORT_SHA}\"" "$BACKEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.pullPolicy\").value = \"Always\"" "$BACKEND_FILE"
+            echo "✅ Updated backend image in $BACKEND_FILE"
           else
-            echo "⚠️ Application file not found: $APP_FILE"
-            echo "Creating application with image tags..."
+            echo "⚠️ Backend app file not found: $BACKEND_FILE"
           fi
+
+          # Update frontend app
+          FRONTEND_FILE="argocd/apps/${ENV}/frontend.yaml"
+          if [ -f "$FRONTEND_FILE" ]; then
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"frontend.image.repository\").value = \"${FRONTEND_IMAGE}\"" "$FRONTEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"frontend.image.tag\").value = \"${SHORT_SHA}\"" "$FRONTEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"frontend.image.pullPolicy\").value = \"Always\"" "$FRONTEND_FILE"
+            echo "✅ Updated frontend image in $FRONTEND_FILE"
+          else
+            echo "⚠️ Frontend app file not found: $FRONTEND_FILE"
+          fi
+
+          echo ""
+          echo "📄 Updated files:"
+          echo "  Backend:  $BACKEND_FILE"
+          echo "  Frontend: $FRONTEND_FILE"
+          echo ""
+          echo "🏷️  Image tags:"
+          echo "  Backend:  ${BACKEND_IMAGE}:${SHORT_SHA}"
+          echo "  Frontend: ${FRONTEND_IMAGE}:${SHORT_SHA}"
       
       - name: Commit and push changes
         run: |
