@@ -21,6 +21,12 @@ spec:
           value: "false"
         - name: frontend.enabled
           value: "true"
+        - name: frontend.image.repository
+          value: linktree-frontend
+        - name: frontend.image.tag
+          value: local
+        - name: frontend.image.pullPolicy
+          value: IfNotPresent
 
   destination:
     server: https://kubernetes.default.svc
