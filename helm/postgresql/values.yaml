@@ -38,8 +38,10 @@ initdb:
   sqlFile: init.sql
 
 # Migration job
+# NOTA: Desabilitado temporariamente devido a problemas de autenticação com CloudNativePG
+# Execute migrations manualmente: kubectl exec -i linktree-dev-postgresql-1 -n dev -- psql -U postgres -d linktree_db < db-init/init.sql
 migration:
-  enabled: true
+  enabled: false
   image: postgres:16-alpine
   restartPolicy: OnFailure
   backoffLimit: 3
