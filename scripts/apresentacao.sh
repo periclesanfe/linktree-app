@@ -297,7 +297,7 @@ print_info "Aguardando pod PostgreSQL estar completamente pronto..."
 sleep 10
 
 # Encontrar o pod PostgreSQL
-PG_POD=$(kubectl get pod -n dev -l postgresql=linktree-dev-postgresql -o jsonpath='{.items[0].metadata.name}')
+PG_POD=$(kubectl get pod -n dev -l cnpg.io/cluster=linktree-dev-postgresql -o jsonpath='{.items[0].metadata.name}')
 
 if [ -z "$PG_POD" ]; then
     print_error "Pod PostgreSQL não encontrado!"
