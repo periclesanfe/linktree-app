@@ -1,0 +1,27 @@
+# Production environment values for PostgreSQL
+
+environment: production
+
+cluster:
+  name: linktree-prod-postgresql
+  instances: 3  # High availability with 3 replicas
+
+  storage:
+    size: 10Gi
+
+  bootstrap:
+    database: linktree_db
+    owner: linktree_prod_user
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+credentials:
+  secretName: linktree-prod-postgres-credentials
+  username: linktree_prod_user
+  password: prod_password_change_me

@@ -1,29 +1,36 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: linktree-prod-app
+  name: linktree-dev-backend
   namespace: argocd
-  labels:
-    app.kubernetes.io/name: linktree
-    app.kubernetes.io/component: application
-    environment: prod
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
 
   source:
     repoURL: https://github.com/periclesanfe/linktree-app.git
     targetRevision: HEAD
-    path: helm/charts-new/linktree
+    path: helm/linktree
     helm:
-      releaseName: linktree-prod
+      releaseName: linktree-dev-backend
       valueFiles:
-        - values.prod.yaml
+        - values.dev.yaml
+      parameters:
+        - name: backend.enabled
+          value: "true"
+        - name: frontend.enabled
+          value: "false"
+        - name: backend.image.repository
+          value: linktree-backend
+        - name: backend.image.tag
+          value: local
+        - name: backend.image.pullPolicy
+          value: IfNotPresent
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: prod
+    namespace: dev
 
   syncPolicy:
     automated:
@@ -34,7 +41,7 @@ spec:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
     retry:
-      limit: 5
+      limit: 3
       backoff:
         duration: 5s
         factor: 2

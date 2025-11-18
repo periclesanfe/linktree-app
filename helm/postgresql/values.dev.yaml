@@ -1,0 +1,27 @@
+# Development environment values for PostgreSQL
+
+environment: development
+
+cluster:
+  name: linktree-dev-postgresql
+  instances: 1
+
+  storage:
+    size: 1Gi
+
+  bootstrap:
+    database: linktree_db
+    owner: linktree_dev_user
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+credentials:
+  secretName: linktree-dev-postgres-credentials
+  username: linktree_dev_user
+  password: dev_password_123
