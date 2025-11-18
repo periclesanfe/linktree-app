@@ -1,0 +1,13 @@
+apiVersion: v2
+name: linktree
+description: Linktree application (Backend API + Frontend SPA)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - linktree
+  - nodejs
+  - react
+  - full-stack
+maintainers:
+  - name: periclesanfe

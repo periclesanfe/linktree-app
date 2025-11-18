@@ -452,10 +452,10 @@ print_step "PASSO 10: Preparando Helm chart"
 echo ""
 
 print_info "Building Helm chart dependencies..."
-cd "$REPO_DIR/helm/charts-new/linktree"
+cd "$REPO_DIR/helm/linktree"
 
 if [ ! -f "Chart.yaml" ]; then
-    print_error "Chart.yaml não encontrado em helm/charts-new/linktree"
+    print_error "Chart.yaml não encontrado em helm/linktree"
     exit 1
 fi
 
@@ -504,7 +504,7 @@ spec:
   source:
     repoURL: file://$REPO_DIR
     targetRevision: HEAD
-    path: helm/charts-new/linktree
+    path: helm/linktree
     helm:
       releaseName: linktree-dev
       valueFiles:
