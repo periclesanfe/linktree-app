@@ -36,18 +36,18 @@ jobs:
 
       - name: Lint Helm chart
         run: |
-          helm lint ./helm/charts-new/linktree
-          helm lint ./helm/charts-new/linktree -f ./helm/charts-new/linktree/values.dev.yaml
-          helm lint ./helm/charts-new/linktree -f ./helm/charts-new/linktree/values.prod.yaml
+          helm lint ./helm/linktree
+          helm lint ./helm/linktree -f ./helm/linktree/values.dev.yaml
+          helm lint ./helm/linktree -f ./helm/linktree/values.prod.yaml
 
       - name: Template Helm chart (dev)
         run: |
-          helm template linktree-dev ./helm/charts-new/linktree -f ./helm/charts-new/linktree/values.dev.yaml > /tmp/rendered-dev.yaml
+          helm template linktree-dev ./helm/linktree -f ./helm/linktree/values.dev.yaml > /tmp/rendered-dev.yaml
           echo "✅ Dev templates rendered successfully"
 
       - name: Template Helm chart (prod)
         run: |
-          helm template linktree-prod ./helm/charts-new/linktree -f ./helm/charts-new/linktree/values.prod.yaml > /tmp/rendered-prod.yaml
+          helm template linktree-prod ./helm/linktree -f ./helm/linktree/values.prod.yaml > /tmp/rendered-prod.yaml
           echo "✅ Prod templates rendered successfully"
 
   build-backend:

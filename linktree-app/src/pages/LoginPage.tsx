@@ -43,6 +43,7 @@ const LoginPage = () => {
             required
           />
         </div>
+        <p className="mb-4 text-sm text-gray-600">Use email:</p>
 
         <div className="mb-6">
           <label className="block text-gray-700 mb-2 text-sm sm:text-base" htmlFor="password">
