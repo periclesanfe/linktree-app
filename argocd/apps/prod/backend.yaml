@@ -13,7 +13,7 @@ spec:
     targetRevision: HEAD
     path: helm/linktree
     helm:
-      releaseName: linktree-prod-backend
+      releaseName: linktree-prod
       valueFiles:
         - values.prod.yaml
       parameters:
@@ -21,12 +21,6 @@ spec:
           value: "true"
         - name: frontend.enabled
           value: "false"
-        - name: backend.image.repository
-          value: linktree-backend
-        - name: backend.image.tag
-          value: local
-        - name: backend.image.pullPolicy
-          value: IfNotPresent
 
   destination:
     server: https://kubernetes.default.svc
