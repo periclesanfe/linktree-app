@@ -73,6 +73,12 @@ const LoginPage = () => {
             </Link>
           </p>
         </div>
+
+        <div className="mt-4 text-center border-t pt-4">
+          <p className="text-xs text-gray-400">
+            v1.0.1 - GitOps Pipeline Test 🚀
+          </p>
+        </div>
       </form>
     </div>
   );
