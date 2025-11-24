@@ -140,29 +140,34 @@ spec:
           stableIngress: {{ include "linktree.backend.fullname" . }}-ingress
 
       # STEPS: Progressão gradual de tráfego
-      # Cada step aumenta o peso (%) de tráfego enviado ao canary
+      # IMPORTANTE: Cada step deve ter APENAS uma ação (setWeight OU pause)
+      # Separamos em steps alternados: setWeight → pause → setWeight → pause
       steps:
-      # Step 1: 10% de tráfego para canary (validação inicial)
+      # Step 1: Definir peso para 10%
       - setWeight: 10
-        pause:
+      # Step 2: Pausar para validação
+      - pause:
           duration: {{ .Values.backend.rollout.canary.steps.step1.pauseDuration }}
 
-      # Step 2: 25% de tráfego para canary
+      # Step 3: Aumentar para 25%
       - setWeight: 25
-        pause:
+      # Step 4: Pausar para validação
+      - pause:
           duration: {{ .Values.backend.rollout.canary.steps.step2.pauseDuration }}
 
-      # Step 3: 50% de tráfego para canary (metade dos usuários)
+      # Step 5: Aumentar para 50%
       - setWeight: 50
-        pause:
+      # Step 6: Pausar para validação
+      - pause:
           duration: {{ .Values.backend.rollout.canary.steps.step3.pauseDuration }}
 
-      # Step 4: 75% de tráfego para canary
+      # Step 7: Aumentar para 75%
       - setWeight: 75
-        pause:
+      # Step 8: Pausar para validação
+      - pause:
           duration: {{ .Values.backend.rollout.canary.steps.step4.pauseDuration }}
 
-      # Step 5: 100% de tráfego para canary (rollout completo)
+      # Step 9: Finalizar com 100%
       - setWeight: 100
 
       # OPCIONAL: Análise automatizada com métricas (Prometheus, etc)
