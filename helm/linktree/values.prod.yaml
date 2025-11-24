@@ -4,7 +4,7 @@ environment: production
 
 backend:
   enabled: true
-  replicaCount: 10
+  replicaCount: 3
 
   image:
     repository: ghcr.io/periclesanfe/linktree-backend
@@ -44,8 +44,8 @@ backend:
 
   autoscaling:
     enabled: true
-    minReplicas: 5
-    maxReplicas: 15
+    minReplicas: 2
+    maxReplicas: 5
     targetCPUUtilizationPercentage: 70
     targetMemoryUtilizationPercentage: 80
 
@@ -124,7 +124,7 @@ backend:
 
 frontend:
   enabled: true
-  replicaCount: 10
+  replicaCount: 3
 
   image:
     repository: ghcr.io/periclesanfe/linktree-frontend
@@ -150,8 +150,8 @@ frontend:
 
   autoscaling:
     enabled: true
-    minReplicas: 5
-    maxReplicas: 15
+    minReplicas: 2
+    maxReplicas: 5
     targetCPUUtilizationPercentage: 70
     targetMemoryUtilizationPercentage: 80
 

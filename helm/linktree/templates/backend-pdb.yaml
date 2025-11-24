@@ -1,3 +1,5 @@
+# Garante disponivilidade dos pods do backend durante interrupções planejadas
+
 {{- if and .Values.backend.enabled .Values.backend.podDisruptionBudget.enabled }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
