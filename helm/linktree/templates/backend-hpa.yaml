@@ -1,3 +1,27 @@
+# ============================================================================
+# BACKEND HPA - HORIZONTAL POD AUTOSCALER
+# ============================================================================
+# Responsabilidade:
+#   - Escala automaticamente o número de pods backend baseado em CPU e memória
+#   - Monitora métricas e ajusta réplicas entre min e max configurados
+#   - Compatível com Deployment tradicional e Argo Rollout
+#
+# Comunicação:
+#   - Metrics Server fornece métricas de CPU/memória dos pods
+#   - HPA controller ajusta spec.replicas do Deployment/Rollout
+#   - Argo Rollouts respeita mudanças do HPA durante rollouts Canary
+#
+# Comportamento com Rollouts:
+#   - BlueGreen: HPA desabilitado (réplicas fixas para previsibilidade)
+#   - Canary: HPA habilitado, escala proporcionalmente stable e canary ReplicaSets
+#
+# Uso em ambientes:
+#   - DEV: Desabilitado (1 réplica fixa para economia de recursos)
+#   - PROD: Habilitado (5-15 réplicas baseado em carga)
+#
+# IMPORTANTE: ArgoCD deve ignorar spec.replicas para evitar conflitos
+# ============================================================================
+
 {{- if and .Values.backend.enabled .Values.backend.autoscaling.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -5,10 +29,13 @@ metadata:
   name: {{ include "linktree.backend.fullname" . }}
   labels:
     {{- include "linktree.backend.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
+    # Dynamically target Rollout or Deployment based on configuration
+    apiVersion: {{ if .Values.backend.rollout.enabled }}argoproj.io/v1alpha1{{ else }}apps/v1{{ end }}
+    kind: {{ if .Values.backend.rollout.enabled }}Rollout{{ else }}Deployment{{ end }}
     name: {{ include "linktree.backend.fullname" . }}
   minReplicas: {{ .Values.backend.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.backend.autoscaling.maxReplicas }}

@@ -75,6 +75,55 @@ backend:
   tolerations: []
   affinity: {}
 
+  # ============================================================================
+  # ARGO ROLLOUTS - CONFIGURAÇÃO PADRÃO
+  # ============================================================================
+  # Configurações padrão para Argo Rollouts
+  # Pode ser sobrescrito por values.dev.yaml (blueGreen) ou values.prod.yaml (canary)
+  #
+  # Por padrão, Rollout está desabilitado (usa Deployment tradicional)
+  # Habilite por ambiente conforme necessário
+  # ============================================================================
+  rollout:
+    enabled: false  # Disabled by default, enable per environment
+    strategy: canary  # Default strategy (blueGreen or canary)
+
+    # BlueGreen configuration
+    blueGreen:
+      scaleDownDelaySeconds: 30
+      antiAffinity: false
+
+    # Canary configuration
+    canary:
+      steps:
+        step1:
+          pauseDuration: 1m
+        step2:
+          pauseDuration: 2m
+        step3:
+          pauseDuration: 2m
+        step4:
+          pauseDuration: 2m
+
+      maxSurge: "25%"
+      maxUnavailable: 0
+
+      analysis:
+        enabled: false
+        successRate:
+          threshold: 95
+          errorRateMax: 5
+          latencyP95Max: 500
+
+  # Ingress configuration (required for Canary traffic routing)
+  ingress:
+    enabled: false
+    host: api.linktree.local
+    annotations: {}
+    tls:
+      enabled: false
+      clusterIssuer: letsencrypt-prod
+
   nameOverride: ""
   fullnameOverride: ""
 
@@ -139,6 +188,46 @@ frontend:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+
+  # ============================================================================
+  # ARGO ROLLOUTS - CONFIGURAÇÃO PADRÃO (FRONTEND)
+  # ============================================================================
+  # Mesma estrutura do backend
+  # Sobrescrever por ambiente conforme necessário
+  # ============================================================================
+  rollout:
+    enabled: false
+    strategy: canary
+
+    blueGreen:
+      scaleDownDelaySeconds: 30
+      antiAffinity: false
+
+    canary:
+      steps:
+        step1:
+          pauseDuration: 1m
+        step2:
+          pauseDuration: 2m
+        step3:
+          pauseDuration: 2m
+        step4:
+          pauseDuration: 2m
+
+      maxSurge: "25%"
+      maxUnavailable: 0
+
+      analysis:
+        enabled: false
+
+  # Ingress configuration
+  ingress:
+    enabled: false
+    host: linktree.local
+    annotations: {}
+    tls:
+      enabled: false
+      clusterIssuer: letsencrypt-prod
 
   nameOverride: ""
   fullnameOverride: ""

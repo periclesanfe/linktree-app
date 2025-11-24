@@ -1,3 +1,26 @@
+# ============================================================================
+# BACKEND SERVICE - SERVIÇO PRINCIPAL DO BACKEND
+# ============================================================================
+# Responsabilidade:
+#   - Expõe o backend da aplicação Linktree para comunicação interna
+#   - Service type ClusterIP (interno ao cluster)
+#   - Gerenciado por Argo Rollouts quando rollout habilitado
+#
+# Comunicação:
+#   - Frontend conecta a este service na porta 8000
+#   - PostgreSQL acessado pelo backend via DATABASE_URL
+#   - Ingress (PROD) roteia tráfego externo para este service
+#
+# Comportamento com Rollouts:
+#   - Deployment tradicional: selector estático (sempre aponta para pods backend)
+#   - BlueGreen: Argo Rollouts alterna selector entre Blue e Green após promoção
+#   - Canary: Service stable, usado com service canary para split de tráfego
+#
+# Uso em ambientes:
+#   - DEV: Active service no BlueGreen (alterna entre versões)
+#   - PROD: Stable service no Canary (recebe porcentagem de tráfego)
+# ============================================================================
+
 {{- if .Values.backend.enabled }}
 apiVersion: v1
 kind: Service
@@ -5,10 +28,18 @@ metadata:
   name: {{ include "linktree.backend.fullname" . }}
   labels:
     {{- include "linktree.backend.labels" . | nindent 4 }}
-  {{- with .Values.backend.service.annotations }}
+    {{- if .Values.backend.rollout.enabled }}
+    service-type: active  # BlueGreen: active service
+    {{- end }}
   annotations:
+    {{- if .Values.backend.rollout.enabled }}
+    # Marca este service como gerenciado por Argo Rollouts
+    rollout.argoproj.io/service-type: {{ if eq .Values.backend.rollout.strategy "blueGreen" }}active{{ else }}stable{{ end }}
+    {{- end }}
+    argocd.argoproj.io/sync-wave: "1"
+    {{- with .Values.backend.service.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
   type: {{ .Values.backend.service.type }}
   ports:
@@ -16,6 +47,12 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+  {{- if not .Values.backend.rollout.enabled }}
+  # Selector estático quando Rollout desabilitado (Deployment tradicional)
   selector:
     {{- include "linktree.backend.selectorLabels" . | nindent 4 }}
+  {{- end }}
+  # Quando Rollout habilitado: selector gerenciado automaticamente pelo controller
+  # BlueGreen: alterna entre stable e preview ReplicaSets
+  # Canary: aponta para stable ReplicaSet (canary service gerencia canary pods)
 {{- end }}

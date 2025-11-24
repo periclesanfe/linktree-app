@@ -39,6 +39,32 @@ backend:
   autoscaling:
     enabled: false
 
+  # ============================================================================
+  # ARGO ROLLOUTS - BLUEGREEN DEPLOYMENT (DEV)
+  # ============================================================================
+  # Configuração para estratégia BlueGreen em ambiente de desenvolvimento
+  # - Duas versões completas rodando simultaneamente (Blue e Green)
+  # - Promoção manual obrigatória (autoPromotionEnabled: false)
+  # - Service preview permite testar nova versão antes de promover
+  # - Após promoção, service active aponta para nova versão
+  #
+  # Comandos úteis:
+  #   Ver status: kubectl argo rollouts get rollout linktree-dev-backend -n dev
+  #   Testar preview: kubectl port-forward svc/linktree-dev-backend-preview 8001:8000 -n dev
+  #   Promover: kubectl argo rollouts promote linktree-dev-backend -n dev
+  #   Abortar: kubectl argo rollouts abort linktree-dev-backend -n dev
+  # ============================================================================
+  rollout:
+    enabled: true
+    strategy: blueGreen
+
+    blueGreen:
+      # Tempo de espera antes de deletar versão antiga após promoção
+      scaleDownDelaySeconds: 30
+
+      # Anti-affinity desabilitado (cluster dev tem apenas 1 node)
+      antiAffinity: false
+
 frontend:
   enabled: true
   replicaCount: 1
@@ -65,3 +91,17 @@ frontend:
 
   autoscaling:
     enabled: false
+
+  # ============================================================================
+  # ARGO ROLLOUTS - BLUEGREEN DEPLOYMENT (DEV) - FRONTEND
+  # ============================================================================
+  # Mesma configuração BlueGreen do backend aplicada ao frontend
+  # Frontend e backend podem ser deployados independentemente
+  # ============================================================================
+  rollout:
+    enabled: true
+    strategy: blueGreen
+
+    blueGreen:
+      scaleDownDelaySeconds: 30
+      antiAffinity: false
