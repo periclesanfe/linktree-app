@@ -46,6 +46,12 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.get('/api/helloWorld', (req, res) => {
+  res.status(200).json({ 
+    message: 'Hello, World!',
+  });
+});
+
 // Root endpoint
 app.get('/api', (req, res) => {
   res.json({ 
