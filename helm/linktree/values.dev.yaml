@@ -9,7 +9,7 @@ backend:
   image:
     repository: linktree-backend
     pullPolicy: Never
-    tag: "local"
+    tag: "v2"
 
   service:
     type: ClusterIP
