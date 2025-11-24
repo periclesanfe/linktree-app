@@ -111,7 +111,6 @@ spec:
 
       # Anti-affinity para separar blue e green em nodes diferentes (opcional)
       {{- if .Values.backend.rollout.blueGreen.antiAffinity }}
-      antiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
           blue:
             weight: 1
@@ -146,8 +145,7 @@ spec:
       # Step 1: Definir peso para 10%
       - setWeight: 10
       # Step 2: Pausar para validação
-      - pause:
-          duration: {{ .Values.backend.rollout.canary.steps.step1.pauseDuration }}
+      - pause: { }
 
       # Step 3: Aumentar para 25%
       - setWeight: 25
