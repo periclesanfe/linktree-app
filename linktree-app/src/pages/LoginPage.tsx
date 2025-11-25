@@ -77,7 +77,7 @@ const LoginPage = () => {
 
         <div className="mt-4 text-center border-t pt-4">
           <p className="text-xs text-gray-400">
-            v1.0.1 - GitOps Pipeline Test 🚀
+            v2.0.0 - Canary Deployment Test 🐤
           </p>
         </div>
       </form>
