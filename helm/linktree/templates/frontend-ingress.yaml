@@ -1,0 +1,84 @@
+# ============================================================================
+# FRONTEND INGRESS - ROTEAMENTO DE TRÁFEGO EXTERNO (PROD)
+# ============================================================================
+# Responsabilidade:
+#   - Expõe o frontend para acesso externo ao cluster
+#   - Gerencia roteamento de tráfego HTTP/HTTPS
+#   - Controla tráfego Canary via annotations do NGINX Ingress Controller
+#
+# Comunicação:
+#   - NGINX Ingress Controller lê este recurso e configura NGINX
+#   - Roteia tráfego para frontend-service (stable) em operação normal
+#   - Durante rollout Canary: divide tráfego entre stable e canary services
+#   - Cert-manager provisiona certificados TLS (se habilitado)
+#
+# Canary Traffic Splitting:
+#   - Argo Rollouts injeta/atualiza annotations automaticamente:
+#     * nginx.ingress.kubernetes.io/canary: "true"
+#     * nginx.ingress.kubernetes.io/canary-weight: "10" (10%, 25%, 50%, etc.)
+#   - NGINX usa estas annotations para dividir requests entre services
+#   - Mais preciso que pod-based splitting (controla % exato de requests)
+#
+# Fluxo de tráfego durante Canary:
+#   1. Tráfego normal: 100% → frontend-service (stable)
+#   2. Rollout inicia: Argo Rollouts cria Ingress canary com weight: 10
+#   3. NGINX divide: 10% → canary-service, 90% → stable-service
+#   4. Steps progridem: weights aumentam (25%, 50%, 75%)
+#   5. Rollout completa: 100% → novo stable, canary Ingress removido
+#
+# Uso em ambientes:
+#   - DEV: Opcional (geralmente usa port-forward)
+#   - PROD: Habilitado (acesso público via domínio)
+# ============================================================================
+
+{{- if and .Values.frontend.enabled .Values.frontend.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "linktree.frontend.fullname" . }}-ingress
+  labels:
+    {{- include "linktree.frontend.labels" . | nindent 4 }}
+  annotations:
+    # NGINX Ingress Controller class
+    kubernetes.io/ingress.class: nginx
+
+    # SSL/TLS configuration via cert-manager
+    {{- if .Values.frontend.ingress.tls.enabled }}
+    cert-manager.io/cluster-issuer: {{ .Values.frontend.ingress.tls.clusterIssuer }}
+    {{- end }}
+
+    # IMPORTANT: Canary annotations managed automatically by Argo Rollouts
+    # During rollout, controller creates separate canary Ingress with:
+    #   nginx.ingress.kubernetes.io/canary: "true"
+    #   nginx.ingress.kubernetes.io/canary-weight: "<percentage>"
+    # DO NOT add these annotations manually here
+
+    # Sync wave for ArgoCD
+    argocd.argoproj.io/sync-wave: "3"
+
+    {{- with .Values.frontend.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+
+spec:
+  {{- if .Values.frontend.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - {{ .Values.frontend.ingress.host }}
+    secretName: {{ include "linktree.frontend.fullname" . }}-tls
+  {{- end }}
+
+  rules:
+  - host: {{ .Values.frontend.ingress.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            # Routes to stable service by default
+            # Argo Rollouts will create canary Ingress to split traffic
+            name: {{ include "linktree.frontend.fullname" . }}
+            port:
+              number: {{ .Values.frontend.service.port }}
+{{- end }}
