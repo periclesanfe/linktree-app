@@ -148,6 +148,15 @@ jobs:
             type=raw,value=${{ steps.vars.outputs.short-sha }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
       
+      - name: Determine backend URL
+        id: backend-url
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "url=https://api.linktree.yourdomain.com" >> $GITHUB_OUTPUT
+          else
+            echo "url=http://linktree-dev-backend:8000" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
@@ -158,6 +167,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            VITE_BACKEND_URL=${{ steps.backend-url.outputs.url }}
 
   update-gitops:
     name: Update GitOps Repository

@@ -138,7 +138,7 @@ frontend:
     port: 80
 
   config:
-    apiUrl: "http://linktree-prod-backend:8000"
+    apiUrl: "https://api.linktree.yourdomain.com"
 
   resources:
     limits:
