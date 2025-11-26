@@ -7,8 +7,8 @@ metadata:
     {{- include "linktree.frontend.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
+    apiVersion: {{ if .Values.frontend.rollout.enabled }}argoproj.io/v1alpha1{{ else }}apps/v1{{ end }}
+    kind: {{ if .Values.frontend.rollout.enabled }}Rollout{{ else }}Deployment{{ end }}
     name: {{ include "linktree.frontend.fullname" . }}
   minReplicas: {{ .Values.frontend.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.frontend.autoscaling.maxReplicas }}
