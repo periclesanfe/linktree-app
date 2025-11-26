@@ -8,6 +8,7 @@ cluster:
 
   storage:
     size: 10Gi
+    storageClass: ""  # Use manual PV binding instead of dynamic provisioning
 
   bootstrap:
     database: linktree_db
@@ -26,3 +27,12 @@ credentials:
   username: linktree_prod_user
   password: prod_password_change_me
   jwtSecret: prod_jwt_secret_change_me
+
+# Enable static PV with initContainer for permission fix
+persistentVolume:
+  enabled: true
+  name: pv-prod-postgresql-1
+  storageClass: ""  # Empty for manual binding
+  capacity: 10Gi
+  reclaimPolicy: Delete
+  hostPath: /tmp/pv-prod-postgresql-1

@@ -17,6 +17,17 @@ cluster:
     database: linktree_db
     owner: linktree_user
 
+  # Security contexts for proper permissions (PostgreSQL runs as UID/GID 26)
+  podSecurityContext:
+    fsGroup: 26
+    fsGroupChangePolicy: "OnRootMismatch"
+
+  securityContext:
+    runAsUser: 26
+    runAsGroup: 26
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+
   # Resource limits
   resources:
     requests:
@@ -47,3 +58,14 @@ migration:
   image: postgres:16-alpine
   restartPolicy: OnFailure
   backoffLimit: 3
+
+# Persistent Volume configuration
+# Create PV for local development with proper permissions
+persistentVolume:
+  enabled: false  # Will be enabled in dev/prod values
+  name: pv-postgresql
+  storageClass: hostpath
+  capacity: 1Gi
+  reclaimPolicy: Delete
+  hostPath: /tmp/postgresql-data
+  nodeAffinity: null
