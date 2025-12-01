@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 
+// Canary Deployment Test - Version 2.0
 // Importar logger e middlewares
 const logger = require('./utils/logger');
 const httpLogger = require('./middleware/httpLogger');
