@@ -9,7 +9,7 @@ backend:
   image:
     repository: linktree-backend
     pullPolicy: Never
-    tag: "v2"
+    tag: "v2.1.0"
 
   service:
     type: ClusterIP
@@ -59,8 +59,11 @@ backend:
     strategy: blueGreen
 
     blueGreen:
+      # Promoção manual obrigatória (não promove automaticamente)
+      autoPromotionEnabled: false
+
       # Tempo de espera antes de deletar versão antiga após promoção
-      scaleDownDelaySeconds: 30
+      scaleDownDelaySeconds: 300
 
       # Anti-affinity desabilitado (cluster dev tem apenas 1 node)
       antiAffinity: false

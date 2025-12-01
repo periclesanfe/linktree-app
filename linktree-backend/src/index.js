@@ -43,9 +43,9 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
-    version: 'v3.0-testing-rollout',
-    deployment: 'Testing Blue-Green & Canary',
-    rolloutType: process.env.ROLLOUT_TYPE || 'unknown',
+    version: 'v2.1.0',
+    deployment: 'Testing Blue-Green Deployment',
+    rolloutType: process.env.ROLLOUT_TYPE || 'blueGreen',
   });
 });
 

@@ -7,11 +7,9 @@ backend:
   replicaCount: 3
 
   image:
-    repository: ghcr.io/periclesanfe/linktree-backend
-    pullPolicy: IfNotPresent
-    tag: ""
-    pullSecrets:
-      - name: ghcr-secret
+    repository: linktree-backend
+    pullPolicy: Never
+    tag: "v2.0.0"
 
   service:
     type: ClusterIP
@@ -127,8 +125,8 @@ frontend:
   replicaCount: 3
 
   image:
-    repository: ghcr.io/periclesanfe/linktree-frontend
-    pullPolicy: IfNotPresent
+    repository: linktree-frontend
+    pullPolicy: Never
     tag: ""
     pullSecrets:
       - name: ghcr-secret
