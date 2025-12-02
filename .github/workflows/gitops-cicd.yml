@@ -18,7 +18,6 @@ on:
 env:
   REGISTRY: ghcr.io
   GITOPS_REPO: periclesanfe/argocd-gitops
-  GITOPS_BRANCH: main
 
 jobs:
   helm-validate:
@@ -122,9 +121,11 @@ jobs:
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "environment=prod" >> $GITHUB_OUTPUT
             echo "app-name=linktree-prod" >> $GITHUB_OUTPUT
+            echo "gitops-branch=main" >> $GITHUB_OUTPUT
           else
             echo "environment=dev" >> $GITHUB_OUTPUT
             echo "app-name=linktree-dev" >> $GITHUB_OUTPUT
+            echo "gitops-branch=develop" >> $GITHUB_OUTPUT
           fi
       
       - name: Checkout GitOps repository
@@ -132,7 +133,7 @@ jobs:
         with:
           repository: ${{ env.GITOPS_REPO }}
           token: ${{ secrets.GITOPS_PAT }}
-          ref: ${{ env.GITOPS_BRANCH }}
+          ref: ${{ steps.env.outputs.gitops-branch }}
       
       - name: Setup yq
         run: |
@@ -175,12 +176,12 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "chore(${{ steps.env.outputs.environment }}): update images to ${{ steps.sha.outputs.short }} [skip ci]
-            
+
             Triggered by: ${{ github.event.head_commit.message }}
             Commit: ${{ github.sha }}
             Author: ${{ github.event.head_commit.author.name }}"
-            
-            git push origin ${{ env.GITOPS_BRANCH }}
+
+            git push origin ${{ steps.env.outputs.gitops-branch }}
             echo "✅ Changes pushed to GitOps repository"
           fi
       
