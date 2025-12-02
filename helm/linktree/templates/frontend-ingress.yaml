@@ -53,8 +53,8 @@ metadata:
     #   nginx.ingress.kubernetes.io/canary-weight: "<percentage>"
     # DO NOT add these annotations manually here
 
-    # Sync wave for ArgoCD
-    argocd.argoproj.io/sync-wave: "3"
+    # Sync wave for ArgoCD - MUST be before Rollout (wave 2)
+    argocd.argoproj.io/sync-wave: "1"
 
     {{- with .Values.frontend.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
