@@ -137,10 +137,6 @@ exports.updateAccentColor = async (req, res) => {
     }
 };
 
-exports.helloWorld = async (req, res) => {
-    res.json({ message: 'Hello, World!' });
-};
-
 exports.updatePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
