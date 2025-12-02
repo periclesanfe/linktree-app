@@ -144,6 +144,17 @@ jobs:
         id: sha
         run: echo "short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
       
+      - name: Debug - List GitOps repository structure
+        run: |
+          echo "📂 Current directory:"
+          pwd
+          echo ""
+          echo "📂 Repository structure:"
+          find . -type f -name "*.yaml" -o -name "*.yml" | head -20
+          echo ""
+          echo "📂 Looking for argocd directory:"
+          ls -la
+
       - name: Update image tags in GitOps repo
         run: |
           ENV="${{ steps.env.outputs.environment }}"
@@ -152,17 +163,28 @@ jobs:
 
           # Update backend app
           BACKEND_FILE="argocd/apps/${ENV}/backend-${ENV}.yaml"
+          echo "🔍 Looking for file: $BACKEND_FILE"
+
           if [ -f "$BACKEND_FILE" ]; then
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"image.tag\").value = \"${SHORT_SHA}\"" "$BACKEND_FILE"
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"image.repository\").value = \"${BACKEND_IMAGE}\"" "$BACKEND_FILE"
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"image.pullPolicy\").value = \"Always\"" "$BACKEND_FILE"
+            echo "✅ File found, updating..."
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.tag\").value = \"${SHORT_SHA}\"" "$BACKEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.repository\").value = \"${BACKEND_IMAGE}\"" "$BACKEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.pullPolicy\").value = \"Always\"" "$BACKEND_FILE"
             echo "✅ Updated backend image in $BACKEND_FILE"
+            echo ""
+            echo "📄 File content after update:"
+            cat "$BACKEND_FILE"
           else
-            echo "⚠️ Backend app file not found: $BACKEND_FILE"
+            echo "❌ Backend app file not found: $BACKEND_FILE"
+            echo ""
+            echo "📂 Available files in argocd/apps/${ENV}/:"
+            ls -la "argocd/apps/${ENV}/" 2>/dev/null || echo "Directory doesn't exist"
+            echo ""
+            echo "📂 All yaml files in argocd/:"
+            find argocd -name "*.yaml" -o -name "*.yml" 2>/dev/null || echo "argocd directory doesn't exist"
           fi
 
           echo ""
-          echo "📄 Updated file: $BACKEND_FILE"
           echo "🏷️  Image tag: ${BACKEND_IMAGE}:${SHORT_SHA}"
       
       - name: Commit and push changes
