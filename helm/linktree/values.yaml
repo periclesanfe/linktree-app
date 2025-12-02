@@ -3,7 +3,7 @@
 
 environment: prod
 
-replicaCount: 3
+replicaCount: 2  # Reduzido para 2 para ambiente Docker Desktop
 
 image:
   repository: ghcr.io/periclesanfe/linktree-backend
@@ -35,7 +35,7 @@ postgresql:
   environment: production
   cluster:
     name: linktree-prod-postgresql
-    instances: 3
+    instances: 1  # Reduzido para 1 para ambiente Docker Desktop
     storage:
       size: 10Gi
       storageClass: ""
@@ -44,11 +44,11 @@ postgresql:
       owner: linktree_prod_user
     resources:
       requests:
-        cpu: 500m
-        memory: 1Gi
+        cpu: 200m
+        memory: 512Mi
       limits:
-        cpu: 2000m
-        memory: 2Gi
+        cpu: 1000m
+        memory: 1Gi
   credentials:
     secretName: linktree-secrets
     username: linktree_prod_user
