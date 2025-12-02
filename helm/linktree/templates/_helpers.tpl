@@ -1,24 +1,18 @@
 {{/*
-======================
-BACKEND HELPERS
-======================
+Expand the name of the chart.
 */}}
-
-{{/*
-Expand the name of the backend.
-*/}}
-{{- define "linktree.backend.name" -}}
-{{- default "linktree-backend" .Values.backend.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- define "linktree.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
-Create a default fully qualified app name for backend.
+Create a default fully qualified app name.
 */}}
-{{- define "linktree.backend.fullname" -}}
-{{- if .Values.backend.fullnameOverride }}
-{{- .Values.backend.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- define "linktree.fullname" -}}
+{{- if .Values.fullnameOverride }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
-{{- $name := default "linktree-backend" .Values.backend.nameOverride }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
 {{- .Release.Name | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -28,90 +22,28 @@ Create a default fully qualified app name for backend.
 {{- end }}
 
 {{/*
-Create chart name and version as used by the chart label for backend.
+Create chart name and version as used by the chart label.
 */}}
-{{- define "linktree.backend.chart" -}}
+{{- define "linktree.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
-Common labels for backend
+Common labels
 */}}
-{{- define "linktree.backend.labels" -}}
-helm.sh/chart: {{ include "linktree.backend.chart" . }}
-{{ include "linktree.backend.selectorLabels" . }}
+{{- define "linktree.labels" -}}
+helm.sh/chart: {{ include "linktree.chart" . }}
+{{ include "linktree.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/part-of: linktree
-app.kubernetes.io/component: backend
-environment: {{ .Values.environment }}
 {{- end }}
 
 {{/*
-Selector labels for backend
+Selector labels
 */}}
-{{- define "linktree.backend.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "linktree.backend.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
-
-{{/*
-======================
-FRONTEND HELPERS
-======================
-*/}}
-
-{{/*
-Expand the name of the frontend.
-*/}}
-{{- define "linktree.frontend.name" -}}
-{{- default "linktree-frontend" .Values.frontend.nameOverride | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Create a default fully qualified app name for frontend.
-*/}}
-{{- define "linktree.frontend.fullname" -}}
-{{- if .Values.frontend.fullnameOverride }}
-{{- .Values.frontend.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- $name := default "linktree-frontend" .Values.frontend.nameOverride }}
-{{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
-{{- end }}
-
-{{/*
-Create chart name and version as used by the chart label for frontend.
-*/}}
-{{- define "linktree.frontend.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Common labels for frontend
-*/}}
-{{- define "linktree.frontend.labels" -}}
-helm.sh/chart: {{ include "linktree.frontend.chart" . }}
-{{ include "linktree.frontend.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/part-of: linktree
-app.kubernetes.io/component: frontend
-environment: {{ .Values.environment }}
-{{- end }}
-
-{{/*
-Selector labels for frontend
-*/}}
-{{- define "linktree.frontend.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "linktree.frontend.name" . }}
+{{- define "linktree.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "linktree.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}

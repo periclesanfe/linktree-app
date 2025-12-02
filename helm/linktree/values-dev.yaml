@@ -1,0 +1,61 @@
+# values-dev.yaml - Overrides para ambiente DEV
+# Usa estratégia BlueGreen com promoção manual
+
+environment: dev
+
+replicaCount: 2
+
+image:
+  tag: "4f49932"
+  pullPolicy: Always
+
+# Database configuration for DEV
+database:
+  host: linktree-dev-postgresql-rw.dev.svc.cluster.local
+  name: "linktree_db"
+  port: 5432
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+podAnnotations:
+  environment: "development"
+  managed-by: "argocd"
+
+# PostgreSQL subchart (CloudNativePG) for DEV
+postgresql:
+  enabled: true
+  environment: development
+  cluster:
+    name: linktree-dev-postgresql
+    instances: 1
+    storage:
+      size: 1Gi
+      storageClass: ""
+    bootstrap:
+      database: linktree_db
+      owner: linktree_dev_user
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  credentials:
+    secretName: linktree-secrets
+    username: linktree_dev_user
+    password: dev_password_123
+    jwtSecret: dev_jwt_secret_change_me
+  persistentVolume:
+    enabled: true
+    name: pv-dev-postgresql-1
+    storageClass: ""
+    capacity: 1Gi
+    reclaimPolicy: Delete
+    hostPath: /tmp/pv-dev-postgresql-1

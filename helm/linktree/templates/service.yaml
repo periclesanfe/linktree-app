@@ -1,0 +1,18 @@
+# Service principal (active/stable)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "linktree.fullname" . }}
+  labels:
+    {{- include "linktree.labels" . | nindent 4 }}
+  annotations:
+    "argocd.argoproj.io/sync-wave": "1"
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "linktree.selectorLabels" . | nindent 4 }}

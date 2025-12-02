@@ -1,0 +1,97 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "linktree.fullname" . }}
+  labels:
+    {{- include "linktree.labels" . | nindent 4 }}
+  annotations:
+    "argocd.argoproj.io/sync-wave": "2"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      {{- include "linktree.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "linktree.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.appPort }}
+              protocol: TCP
+
+          envFrom:
+            - secretRef:
+                name: {{ .Values.secretName }}
+            - configMapRef:
+                name: {{ include "linktree.fullname" . }}-config
+
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+  # Estratégia condicional baseada no environment
+  strategy:
+    {{- if eq .Values.environment "dev" }}
+    # ============================================================================
+    # BLUE-GREEN STRATEGY (DEV)
+    # ============================================================================
+    # - Promoção manual obrigatória
+    # - Permite testar preview antes de promover
+    # - Útil para validação em desenvolvimento
+    # ============================================================================
+    blueGreen:
+      activeService: {{ include "linktree.fullname" . }}
+      previewService: {{ include "linktree.fullname" . }}-preview
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 30
+    {{- else }}
+    # ============================================================================
+    # CANARY STRATEGY (PROD)
+    # ============================================================================
+    # - Rollout progressivo: 20% → 40% → 60% → 80% → 100%
+    # - Primeira pausa é manual, demais são automáticas
+    # - Permite rollback rápido em caso de problemas
+    # ============================================================================
+    canary:
+      stableService: {{ include "linktree.fullname" . }}
+      canaryService: {{ include "linktree.fullname" . }}-canary
+      steps:
+        - setWeight: 20
+        - pause: {}
+        - setWeight: 40
+        - pause: { duration: 30s }
+        - setWeight: 60
+        - pause: { duration: 30s }
+        - setWeight: 80
+        - pause: { duration: 30s }
+    {{- end }}

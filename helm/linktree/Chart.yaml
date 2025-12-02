@@ -1,13 +1,19 @@
 apiVersion: v2
-name: linktree
-description: Linktree application (Backend API + Frontend SPA)
+name: linktree-backend
+description: Linktree Backend API with Argo Rollouts (BlueGreen/Canary) and CloudNativePG
 type: application
 version: 1.0.0
 appVersion: "1.0.0"
 keywords:
   - linktree
   - nodejs
-  - react
-  - full-stack
+  - backend
+  - argo-rollouts
+  - postgresql
 maintainers:
   - name: periclesanfe
+
+dependencies:
+  - name: postgresql
+    version: "1.0.0"
+    condition: postgresql.enabled

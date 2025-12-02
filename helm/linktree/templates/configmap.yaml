@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linktree.fullname" . }}-config
+  labels:
+    {{- include "linktree.labels" . | nindent 4 }}
+  annotations:
+    "argocd.argoproj.io/sync-wave": "0"
+data:
+  NODE_ENV: "production"
+  PORT: {{ .Values.appPort | quote }}
+  CORS_ORIGIN: "*"
+  DB_HOST: {{ .Values.database.host | quote }}
+  DB_PORT: {{ .Values.database.port | quote }}
+  DB_NAME: {{ .Values.database.name | quote }}

@@ -1,233 +1,106 @@
-# Default values for linktree application
+# values.yaml - Configuração PROD (Canary)
+# Para DEV, use values-dev.yaml com overrides
 
-# Environment (dev, staging, prod)
-environment: production
+environment: prod
 
-# Backend (API)
-backend:
+replicaCount: 3
+
+image:
+  repository: ghcr.io/periclesanfe/linktree-backend
+  pullPolicy: Always
+  tag: "4f49932"
+
+imagePullSecrets: []
+  # - name: ghcr-secret
+
+service:
+  type: ClusterIP
+  port: 8000
+
+appPort: 8000
+
+# Database configuration
+database:
+  host: linktree-prod-postgresql-rw.prod.svc.cluster.local
+  name: "linktree_db"
+  port: 5432
+  # Credentials vem do secret
+
+# Secret name containing DB_USER, DB_PASSWORD, JWT_SECRET
+secretName: "linktree-secrets"
+
+# PostgreSQL subchart (CloudNativePG)
+postgresql:
   enabled: true
-  replicaCount: 3
+  environment: production
+  cluster:
+    name: linktree-prod-postgresql
+    instances: 3
+    storage:
+      size: 10Gi
+      storageClass: ""
+    bootstrap:
+      database: linktree_db
+      owner: linktree_prod_user
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+  credentials:
+    secretName: linktree-secrets
+    username: linktree_prod_user
+    password: prod_password_change_me
+    jwtSecret: prod_jwt_secret_change_me
+  persistentVolume:
+    enabled: true
+    name: pv-prod-postgresql-1
+    storageClass: ""
+    capacity: 10Gi
+    reclaimPolicy: Delete
+    hostPath: /tmp/pv-prod-postgresql-1
 
-  image:
-    repository: ghcr.io/periclesanfe/linktree-backend
-    pullPolicy: IfNotPresent
-    tag: ""  # Defaults to chart appVersion if not set
-    pullSecrets: []
-    # - name: ghcr-secret
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
 
-  service:
-    type: ClusterIP
+livenessProbe:
+  httpGet:
+    path: /api/health
     port: 8000
-    targetPort: 8000
-    annotations: {}
+  initialDelaySeconds: 30
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 3
 
-  config:
-    nodeEnv: production
-    corsOrigin: "*"
+readinessProbe:
+  httpGet:
+    path: /api/health
     port: 8000
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
 
-  # Secret único contendo todas as credenciais (JWT_SECRET, DB_USER, DB_PASSWORD)
-  secretName: "linktree-secrets"
+podAnnotations:
+  environment: "production"
+  managed-by: "argocd"
 
-  database:
-    host: "linktree-infrastructure-postgresql-rw"
-    port: "5432"
-    database: "linktree_db"
-
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 250m
-      memory: 256Mi
-
-  livenessProbe:
-    httpGet:
-      path: /api/health
-      port: 8000
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 3
-
-  readinessProbe:
-    httpGet:
-      path: /api/health
-      port: 8000
-    initialDelaySeconds: 10
-    periodSeconds: 5
-    timeoutSeconds: 3
-    failureThreshold: 3
-
-  autoscaling:
-    enabled: false
-    minReplicas: 2
-    maxReplicas: 10
-    targetCPUUtilizationPercentage: 70
-    targetMemoryUtilizationPercentage: 80
-
-  podDisruptionBudget:
-    enabled: false
-    minAvailable: 1
-
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-
-  # ============================================================================
-  # ARGO ROLLOUTS - CONFIGURAÇÃO PADRÃO
-  # ============================================================================
-  # Configurações padrão para Argo Rollouts
-  # Pode ser sobrescrito por values.dev.yaml (blueGreen) ou values.prod.yaml (canary)
-  #
-  # Por padrão, Rollout está desabilitado (usa Deployment tradicional)
-  # Habilite por ambiente conforme necessário
-  # ============================================================================
-  rollout:
-    enabled: false  # Disabled by default, enable per environment
-    strategy: canary  # Default strategy (blueGreen or canary)
-
-    # BlueGreen configuration
-    blueGreen:
-      scaleDownDelaySeconds: 30
-      antiAffinity: false
-
-    # Canary configuration
-    canary:
-      steps:
-        step1:
-          pauseDuration: 1m
-        step2:
-          pauseDuration: 2m
-        step3:
-          pauseDuration: 2m
-        step4:
-          pauseDuration: 2m
-
-      maxSurge: "25%"
-      maxUnavailable: 0
-
-      analysis:
-        enabled: false
-        successRate:
-          threshold: 95
-          errorRateMax: 5
-          latencyP95Max: 500
-
-  # Ingress configuration (required for Canary traffic routing)
-  ingress:
-    enabled: false
-    host: api.linktree.local
-    annotations: {}
-    tls:
-      enabled: false
-      clusterIssuer: letsencrypt-prod
-
-  nameOverride: ""
-  fullnameOverride: ""
-
-# Frontend (SPA)
-frontend:
-  enabled: true
-  replicaCount: 3
-
-  image:
-    repository: ghcr.io/periclesanfe/linktree-frontend
-    pullPolicy: IfNotPresent
-    tag: ""  # Defaults to chart appVersion if not set
-    pullSecrets: []
-    # - name: ghcr-secret
-
-  service:
-    type: ClusterIP
-    port: 80
-    targetPort: 80
-    annotations: {}
-
-  config:
-    apiUrl: "http://linktree-backend:8000"
-
-  resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-
-  livenessProbe:
-    httpGet:
-      path: /
-      port: 80
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 3
-
-  readinessProbe:
-    httpGet:
-      path: /
-      port: 80
-    initialDelaySeconds: 5
-    periodSeconds: 5
-    timeoutSeconds: 3
-    failureThreshold: 3
-
-  autoscaling:
-    enabled: false
-    minReplicas: 2
-    maxReplicas: 10
-    targetCPUUtilizationPercentage: 70
-    targetMemoryUtilizationPercentage: 80
-
-  podDisruptionBudget:
-    enabled: false
-    minAvailable: 1
-
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-
-  # ============================================================================
-  # ARGO ROLLOUTS - CONFIGURAÇÃO PADRÃO (FRONTEND)
-  # ============================================================================
-  # Mesma estrutura do backend
-  # Sobrescrever por ambiente conforme necessário
-  # ============================================================================
-  rollout:
-    enabled: false
-    strategy: canary
-
-    blueGreen:
-      scaleDownDelaySeconds: 30
-      antiAffinity: false
-
-    canary:
-      steps:
-        step1:
-          pauseDuration: 1m
-        step2:
-          pauseDuration: 2m
-        step3:
-          pauseDuration: 2m
-        step4:
-          pauseDuration: 2m
-
-      maxSurge: "25%"
-      maxUnavailable: 0
-
-      analysis:
-        enabled: false
-
-  # Ingress configuration
-  ingress:
-    enabled: false
-    host: linktree.local
-    annotations: {}
-    tls:
-      enabled: false
-      clusterIssuer: letsencrypt-prod
-
-  nameOverride: ""
-  fullnameOverride: ""
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - linktree-backend
+          topologyKey: kubernetes.io/hostname
