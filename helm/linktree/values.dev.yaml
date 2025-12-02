@@ -6,7 +6,6 @@ environment: dev
 replicaCount: 2
 
 image:
-  tag: "4f49932"
   pullPolicy: Always
 
 # Database configuration for DEV
