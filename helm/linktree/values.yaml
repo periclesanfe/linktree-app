@@ -8,7 +8,6 @@ replicaCount: 2  # Reduzido para 2 para ambiente Docker Desktop
 image:
   repository: ghcr.io/periclesanfe/linktree-backend
   pullPolicy: Always
-  tag: "4f49932"
 
 imagePullSecrets: []
   # - name: ghcr-secret
