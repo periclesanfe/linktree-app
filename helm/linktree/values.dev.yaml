@@ -7,9 +7,9 @@ backend:
   replicaCount: 1
 
   image:
-    repository: linktree-backend
-    pullPolicy: Never
-    tag: "v2.1.0"
+    repository: ghcr.io/periclesanfe/linktree-backend
+    pullPolicy: Always
+    tag: "ea4a7e9"
 
   service:
     type: ClusterIP
