@@ -38,7 +38,7 @@ jobs:
         run: |
           helm lint ./helm/linktree
           helm lint ./helm/linktree -f ./helm/linktree/values.dev.yaml
-          helm lint ./helm/linktree -f ./helm/linktree/values.prod.yaml
+          helm lint ./helm/linktree -f ./helm/linktree/values.yaml
 
       - name: Template Helm chart (dev)
         run: |
@@ -47,7 +47,7 @@ jobs:
 
       - name: Template Helm chart (prod)
         run: |
-          helm template linktree-prod ./helm/linktree -f ./helm/linktree/values.prod.yaml > /tmp/rendered-prod.yaml
+          helm template linktree-prod ./helm/linktree -f ./helm/linktree/values.yaml > /tmp/rendered-prod.yaml
           echo "✅ Prod templates rendered successfully"
 
   build-backend:
@@ -109,79 +109,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  build-frontend:
-    name: Build and Push Frontend
-    runs-on: ubuntu-latest
-    needs: helm-validate
-    permissions:
-      contents: read
-      packages: write
-    
-    outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
-      short-sha: ${{ steps.vars.outputs.short-sha }}
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up variables
-        id: vars
-        run: |
-          echo "short-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-      
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/linktree-frontend
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=${{ steps.vars.outputs.short-sha }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-      
-      - name: Determine backend URL
-        id: backend-url
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "url=https://api.linktree.yourdomain.com" >> $GITHUB_OUTPUT
-          else
-            echo "url=http://linktree-dev-backend:8000" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Build and push Frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: ./linktree-app
-          file: ./linktree-app/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            VITE_BACKEND_URL=${{ steps.backend-url.outputs.url }}
-
   update-gitops:
     name: Update GitOps Repository
     runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend]
+    needs: [build-backend]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     
     steps:
@@ -212,43 +143,26 @@ jobs:
         id: sha
         run: echo "short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
       
-      - name: Update image tags in App of Apps
+      - name: Update image tags in GitOps repo
         run: |
           ENV="${{ steps.env.outputs.environment }}"
           SHORT_SHA="${{ steps.sha.outputs.short }}"
           BACKEND_IMAGE="ghcr.io/${{ github.repository_owner }}/linktree-backend"
-          FRONTEND_IMAGE="ghcr.io/${{ github.repository_owner }}/linktree-frontend"
 
           # Update backend app
-          BACKEND_FILE="argocd/apps/${ENV}/backend.yaml"
+          BACKEND_FILE="argocd/apps/${ENV}/backend-${ENV}.yaml"
           if [ -f "$BACKEND_FILE" ]; then
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.repository\").value = \"${BACKEND_IMAGE}\"" "$BACKEND_FILE"
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.tag\").value = \"${SHORT_SHA}\"" "$BACKEND_FILE"
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.pullPolicy\").value = \"Always\"" "$BACKEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"image.tag\").value = \"${SHORT_SHA}\"" "$BACKEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"image.repository\").value = \"${BACKEND_IMAGE}\"" "$BACKEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"image.pullPolicy\").value = \"Always\"" "$BACKEND_FILE"
             echo "✅ Updated backend image in $BACKEND_FILE"
           else
             echo "⚠️ Backend app file not found: $BACKEND_FILE"
           fi
 
-          # Update frontend app
-          FRONTEND_FILE="argocd/apps/${ENV}/frontend.yaml"
-          if [ -f "$FRONTEND_FILE" ]; then
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"frontend.image.repository\").value = \"${FRONTEND_IMAGE}\"" "$FRONTEND_FILE"
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"frontend.image.tag\").value = \"${SHORT_SHA}\"" "$FRONTEND_FILE"
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"frontend.image.pullPolicy\").value = \"Always\"" "$FRONTEND_FILE"
-            echo "✅ Updated frontend image in $FRONTEND_FILE"
-          else
-            echo "⚠️ Frontend app file not found: $FRONTEND_FILE"
-          fi
-
           echo ""
-          echo "📄 Updated files:"
-          echo "  Backend:  $BACKEND_FILE"
-          echo "  Frontend: $FRONTEND_FILE"
-          echo ""
-          echo "🏷️  Image tags:"
-          echo "  Backend:  ${BACKEND_IMAGE}:${SHORT_SHA}"
-          echo "  Frontend: ${FRONTEND_IMAGE}:${SHORT_SHA}"
+          echo "📄 Updated file: $BACKEND_FILE"
+          echo "🏷️  Image tag: ${BACKEND_IMAGE}:${SHORT_SHA}"
       
       - name: Commit and push changes
         run: |
@@ -277,6 +191,5 @@ jobs:
           echo "**Environment:** ${{ steps.env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "**Image Tag:** \`${{ steps.sha.outputs.short }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Backend Image:** \`ghcr.io/${{ github.repository_owner }}/linktree-backend:${{ steps.sha.outputs.short }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Frontend Image:** \`ghcr.io/${{ github.repository_owner }}/linktree-frontend:${{ steps.sha.outputs.short }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "ArgoCD will sync automatically 🎯" >> $GITHUB_STEP_SUMMARY
