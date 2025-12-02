@@ -30,8 +30,8 @@ backend:
 
   resources:
     limits:
-      cpu: 300m
-      memory: 384Mi
+      cpu: 400m
+      memory: 512Mi
     requests:
       cpu: 100m
       memory: 128Mi
@@ -69,7 +69,7 @@ backend:
       antiAffinity: false
 
 frontend:
-  enabled: true
+  enabled: false
   replicaCount: 1
 
   image:
@@ -86,8 +86,8 @@ frontend:
 
   resources:
     limits:
-      cpu: 150m
-      memory: 192Mi
+      cpu: 200m
+      memory: 256Mi
     requests:
       cpu: 50m
       memory: 64Mi

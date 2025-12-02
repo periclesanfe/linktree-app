@@ -121,7 +121,7 @@ backend:
       clusterIssuer: letsencrypt-prod
 
 frontend:
-  enabled: true
+  enabled: false
   replicaCount: 3
 
   image:
