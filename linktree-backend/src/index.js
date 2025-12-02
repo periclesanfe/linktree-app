@@ -122,4 +122,6 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
+console.log('test-deployment');
+
 module.exports = app;
