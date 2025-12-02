@@ -147,7 +147,7 @@ frontend:
       memory: 192Mi
 
   autoscaling:
-    enabled: true
+    enabled: false  # Temporarily disabled to allow Rollout creation
     minReplicas: 2
     maxReplicas: 5
     targetCPUUtilizationPercentage: 70
