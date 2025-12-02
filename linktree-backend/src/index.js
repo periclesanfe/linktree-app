@@ -44,9 +44,10 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
-    version: 'v2.1.0',
-    deployment: 'Testing Blue-Green Deployment',
+    version: 'v2.2.0-dev',
+    deployment: 'Testing GitOps CI/CD Pipeline',
     rolloutType: process.env.ROLLOUT_TYPE || 'blueGreen',
+    message: 'Build triggered from develop branch',
   });
 });
 
