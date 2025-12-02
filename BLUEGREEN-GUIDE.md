@@ -91,9 +91,8 @@ environment: dev
 replicaCount: 2
 
 image:
-  repository: ghcr.io/periclesanfe/linktree-backend
   pullPolicy: Always
-  tag: "4f49932"
+  # Tag vem dos parâmetros do ArgoCD Application (não hardcoded aqui)
 
 database:
   host: linktree-dev-postgresql-rw.dev.svc.cluster.local
@@ -109,7 +108,7 @@ postgresql:
 **Função:**
 - Define `environment: dev` que ativa a estratégia BlueGreen
 - Configura 2 réplicas para o backend
-- Define a tag da imagem Docker que será deployada
+- **IMPORTANTE**: A tag da imagem NÃO está definida aqui, ela vem dos parâmetros do ArgoCD Application
 - Configura PostgreSQL com 1 instância para DEV
 
 ---
@@ -128,15 +127,23 @@ spec:
   project: default
   source:
     repoURL: https://github.com/periclesanfe/linktree-app.git
-    targetRevision: develop
+    targetRevision: HEAD
     path: helm/linktree
     helm:
-      releaseName: linktree-backend-dev
+      releaseName: linktree-dev
       valueFiles:
         - values.dev.yaml
       parameters:
+        - name: backend.enabled
+          value: "true"
+        - name: frontend.enabled
+          value: "false"
+        - name: image.repository
+          value: ghcr.io/periclesanfe/linktree-backend
         - name: image.tag
-          value: "4f49932"  # TAG DA IMAGEM
+          value: "1561e75"  # TAG DA IMAGEM (atualizada pelo CI/CD)
+        - name: image.pullPolicy
+          value: Always
   destination:
     server: https://kubernetes.default.svc
     namespace: dev
@@ -148,14 +155,51 @@ spec:
 
 **Função:**
 - Define qual repositório Git monitorar (`linktree-app`)
-- Define qual branch usar (`develop`)
+- Define qual branch usar (`HEAD` = branch atual)
 - Define qual Helm chart usar (`helm/linktree`)
-- **IMPORTANTE:** `image.tag` pode sobrescrever a tag definida no values.yaml
+- **IMPORTANTE:** `image.tag` sobrescreve qualquer valor no values.yaml
 - Sync automático: ArgoCD detecta mudanças e aplica automaticamente
+- **Esta aplicação é gerenciada pela `root-app` (App of Apps pattern)**
 
 ---
 
-### 5. **GitHub Actions - CI/CD Pipeline**
+### 5. **Root Application (App of Apps)**
+
+**Arquivo:** `argocd-gitops/argocd/root-app.yaml`
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/periclesanfe/argocd-gitops.git
+    targetRevision: develop  # Monitora branch develop
+    path: argocd/apps        # Diretório com as definições das apps
+    directory:
+      recurse: true           # Busca recursivamente em subdiretórios
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+**Função:**
+- **App of Apps Pattern**: Aplicação raiz que gerencia todas as outras aplicações
+- Monitora o repositório `argocd-gitops` (branch develop)
+- Quando um arquivo em `argocd/apps/` é modificado, automaticamente atualiza a aplicação correspondente
+- **Deploy inicial único**: `kubectl apply -f argocd/root-app.yaml -n argocd`
+- **Depois disso**: Todas as mudanças são automáticas via GitOps
+
+---
+
+### 6. **GitHub Actions - CI/CD Pipeline**
 
 **Arquivo:** `linktree/.github/workflows/gitops-cicd.yml`
 
@@ -176,15 +220,17 @@ spec:
 - name: Commit and push changes
   run: |
     git commit -m "chore(dev): update images to ${{ steps.sha.outputs.short }} [skip ci]"
-    git push origin main
+    git push origin develop  # Push para branch develop do argocd-gitops
 ```
 
 **Função:**
 1. **Build da imagem Docker** com tag igual ao commit SHA
 2. **Push para GitHub Container Registry** (ghcr.io)
 3. **Atualiza `image.tag`** no arquivo ArgoCD Application no repo `argocd-gitops`
-4. **Commit e push** das mudanças para o repo GitOps
-5. **ArgoCD detecta** a mudança e inicia o rollout BlueGreen automaticamente
+4. **Commit e push** para o branch correto (develop → develop, main → main)
+5. **root-app detecta** a mudança no repo GitOps
+6. **ArgoCD atualiza** a aplicação `linktree-backend-dev` automaticamente
+7. **Argo Rollouts inicia** o rollout BlueGreen automaticamente
 
 ---
 
@@ -195,6 +241,7 @@ spec:
 - ArgoCD instalado e configurado
 - Argo Rollouts instalado
 - CloudNativePG instalado
+- **root-app deployada** (necessário apenas uma vez): `kubectl apply -f argocd-gitops/argocd/root-app.yaml -n argocd`
 
 ---
 
@@ -227,40 +274,43 @@ git push origin develop
 
 ---
 
-### **Passo 3: ArgoCD detecta mudança e inicia rollout**
+### **Passo 3: root-app e ArgoCD detectam mudança**
 
 **Aguarde 30-60 segundos** e verifique:
 
 ```bash
 kubectl get applications -n argocd
 # NAME                    SYNC STATUS   HEALTH STATUS
+# root-app                Synced        Healthy
 # linktree-backend-dev    Synced        Progressing
 ```
 
-ArgoCD automaticamente:
-1. ✅ Detecta que `image.tag` mudou no repositório GitOps
-2. ✅ Cria um novo ReplicaSet com a nova imagem (Blue)
-3. ✅ Sobe 2 novos pods com a nova versão
-4. ✅ Aponta o **preview service** para os novos pods
-5. ✅ Mantém os pods antigos rodando (Green) no **active service**
+Fluxo automático:
+1. ✅ **root-app** detecta mudança no repositório `argocd-gitops`
+2. ✅ **root-app** atualiza a aplicação `linktree-backend-dev` com a nova `image.tag`
+3. ✅ **ArgoCD** faz sync da aplicação e aplica o novo Helm chart
+4. ✅ **Argo Rollouts** cria um novo ReplicaSet com a nova imagem (Blue)
+5. ✅ Sobe 2 novos pods com a nova versão
+6. ✅ Aponta o **preview service** para os novos pods
+7. ✅ Mantém os pods antigos rodando (Green) no **active service**
 
 ---
 
 ### **Passo 4: Verificar estado do rollout**
 
 ```bash
-kubectl argo rollouts get rollout linktree-backend-dev -n dev
+kubectl argo rollouts get rollout linktree-dev-linktree-backend -n dev
 ```
 
 **Saída esperada:**
 ```
-Name:            linktree-backend-dev
+Name:            linktree-dev-linktree-backend
 Namespace:       dev
 Status:          ◌ Progressing
 Message:         active service cutover pending
 Strategy:        BlueGreen
 Images:          ghcr.io/periclesanfe/linktree-backend:4f49932 (stable, active)  ← VERSÃO ANTIGA (GREEN)
-                 ghcr.io/periclesanfe/linktree-backend:a1b2c3d (preview)        ← NOVA VERSÃO (BLUE)
+                 ghcr.io/periclesanfe/linktree-backend:1561e75 (preview)        ← NOVA VERSÃO (BLUE)
 Replicas:
   Desired:       2
   Current:       4  ← 2 pods antigos + 2 pods novos
@@ -271,7 +321,7 @@ Replicas:
 
 **Neste momento você tem:**
 - **2 pods rodando versão antiga** (Green) - acessíveis via service `linktree-backend-dev`
-- **2 pods rodando versão nova** (Blue) - acessíveis via service `linktree-backend-dev-preview`
+- **2 pods rodando versão nova** (Blue) - acessíveis via service `linktree-dev-linktree-backend-preview`
 
 ---
 
@@ -279,7 +329,7 @@ Replicas:
 
 ```bash
 # Abrir port-forward para o preview service
-kubectl port-forward svc/linktree-backend-dev-preview 8080:8000 -n dev
+kubectl port-forward svc/linktree-dev-linktree-backend-preview 8080:8000 -n dev
 
 # Em outro terminal, testar
 curl http://localhost:8080/api/health
@@ -304,7 +354,7 @@ kubectl logs -l app.kubernetes.io/name=linktree-backend -n dev --tail=50 -f
 Se os testes estiverem OK, promova manualmente:
 
 ```bash
-kubectl argo rollouts promote linktree-backend-dev -n dev
+kubectl argo rollouts promote linktree-dev-linktree-backend -n dev
 ```
 
 **O que acontece:**
@@ -318,7 +368,7 @@ kubectl argo rollouts promote linktree-backend-dev -n dev
 ### **Passo 7: Verificar rollout completo**
 
 ```bash
-kubectl argo rollouts get rollout linktree-backend-dev -n dev
+kubectl argo rollouts get rollout linktree-dev-linktree-backend -n dev
 ```
 
 **Saída esperada:**
@@ -361,19 +411,27 @@ kubectl get pods -n dev
 │ 2. GitHub Actions:                                              │
 │    - Build imagem Docker (tag = commit SHA)                     │
 │    - Push para ghcr.io                                          │
-│    - Atualiza image.tag no argocd-gitops repo                   │
+│    - Atualiza image.tag no argocd-gitops repo (branch develop)  │
+│    - Commit e push para argocd-gitops/develop                   │
 └───────────────────────┬─────────────────────────────────────────┘
                         │
                         ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 3. ArgoCD detecta mudança no argocd-gitops repo                 │
+│ 3. root-app detecta mudança no argocd-gitops repo               │
+│    - Monitora argocd/apps/ directory recursivamente             │
+│    - Detecta que backend-dev.yaml foi atualizado                │
+└───────────────────────┬─────────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 4. ArgoCD atualiza aplicação linktree-backend-dev               │
 │    - Inicia sync automático                                     │
 │    - Aplica novo Helm chart com nova image.tag                  │
 └───────────────────────┬─────────────────────────────────────────┘
                         │
                         ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 4. Argo Rollouts inicia BlueGreen deployment:                   │
+│ 5. Argo Rollouts inicia BlueGreen deployment:                   │
 │    - Cria novo ReplicaSet com nova imagem (BLUE)                │
 │    - Sobe 2 novos pods                                          │
 │    - Preview service aponta para novos pods                     │
@@ -383,20 +441,20 @@ kubectl get pods -n dev
                         │
                         ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 5. Desenvolvedor testa preview service:                         │
+│ 6. Desenvolvedor testa preview service:                         │
 │    - kubectl port-forward svc/...-preview 8080:8000 -n dev      │
 │    - Testa endpoints, funcionalidades, logs                     │
 └───────────────────────┬─────────────────────────────────────────┘
                         │
                         ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 6. Desenvolvedor promove manualmente:                           │
-│    - kubectl argo rollouts promote ... -n dev                   │
+│ 7. Desenvolvedor promove manualmente:                           │
+│    - kubectl argo rollouts promote linktree-dev-linktree-...    │
 └───────────────────────┬─────────────────────────────────────────┘
                         │
                         ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 7. Argo Rollouts finaliza BlueGreen:                            │
+│ 8. Argo Rollouts finaliza BlueGreen:                            │
 │    - Active service redirecionado para novos pods (BLUE)        │
 │    - Pods antigos (GREEN) são desligados após 30s               │
 │    - Status: Healthy                                            │
@@ -409,22 +467,22 @@ kubectl get pods -n dev
 
 ### Monitorar rollout em tempo real
 ```bash
-kubectl argo rollouts get rollout linktree-backend-dev -n dev --watch
+kubectl argo rollouts get rollout linktree-dev-linktree-backend -n dev --watch
 ```
 
 ### Ver histórico de rollouts
 ```bash
-kubectl argo rollouts history linktree-backend-dev -n dev
+kubectl argo rollouts history linktree-dev-linktree-backend -n dev
 ```
 
 ### Fazer rollback (voltar para versão anterior)
 ```bash
-kubectl argo rollouts undo linktree-backend-dev -n dev
+kubectl argo rollouts undo linktree-dev-linktree-backend -n dev
 ```
 
 ### Abortar rollout em andamento
 ```bash
-kubectl argo rollouts abort linktree-backend-dev -n dev
+kubectl argo rollouts abort linktree-dev-linktree-backend -n dev
 ```
 
 ### Ver logs da aplicação
@@ -450,7 +508,7 @@ kubectl -n argocd patch application linktree-backend-dev --type merge -p '{"oper
 **Causa:** Aguardando promoção manual (comportamento esperado)
 **Solução:**
 ```bash
-kubectl argo rollouts promote linktree-backend-dev -n dev
+kubectl argo rollouts promote linktree-dev-linktree-backend -n dev
 ```
 
 ### Pods não inicializam (CrashLoopBackOff)

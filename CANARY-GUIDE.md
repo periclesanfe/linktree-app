@@ -132,7 +132,7 @@ postgresql:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: linktree-backend-prod
+  name: linktree-prod-linktree-backend
   namespace: argocd
 spec:
   project: default
@@ -141,7 +141,7 @@ spec:
     targetRevision: main
     path: helm/linktree
     helm:
-      releaseName: linktree-backend-prod
+      releaseName: linktree-prod-linktree-backend
       valueFiles:
         - values.yaml
       parameters:
@@ -244,7 +244,7 @@ git push origin main
 ```bash
 kubectl get applications -n argocd
 # NAME                    SYNC STATUS   HEALTH STATUS
-# linktree-backend-prod   Synced        Progressing
+# linktree-prod-linktree-backend   Synced        Progressing
 ```
 
 ArgoCD automaticamente:
@@ -259,12 +259,12 @@ ArgoCD automaticamente:
 ### **Passo 4: Verificar estado do rollout - WATCH em tempo real**
 
 ```bash
-kubectl argo rollouts get rollout linktree-backend-prod -n prod --watch
+kubectl argo rollouts get rollout linktree-prod-linktree-backend -n prod --watch
 ```
 
 **Saída esperada (Step 1/8 - 20%):**
 ```
-Name:            linktree-backend-prod
+Name:            linktree-prod-linktree-backend
 Namespace:       prod
 Status:          ॥ Paused
 Message:         CanaryPauseStep
@@ -292,7 +292,7 @@ Replicas:
 
 ```bash
 # Abrir port-forward para o canary service
-kubectl port-forward svc/linktree-backend-prod-canary 8081:8000 -n prod
+kubectl port-forward svc/linktree-prod-linktree-backend-canary 8081:8000 -n prod
 
 # Em outro terminal, testar
 curl http://localhost:8081/api/health
@@ -317,7 +317,7 @@ kubectl logs -l rollouts-pod-template-hash=<canary-hash> -n prod --tail=50 -f
 Se os testes estiverem OK, promova manualmente:
 
 ```bash
-kubectl argo rollouts promote linktree-backend-prod -n prod
+kubectl argo rollouts promote linktree-prod-linktree-backend -n prod
 ```
 
 **O que acontece:**
@@ -331,7 +331,7 @@ kubectl argo rollouts promote linktree-backend-prod -n prod
 
 **Acompanhe em tempo real:**
 ```bash
-kubectl argo rollouts get rollout linktree-backend-prod -n prod --watch
+kubectl argo rollouts get rollout linktree-prod-linktree-backend -n prod --watch
 ```
 
 ---
@@ -339,12 +339,12 @@ kubectl argo rollouts get rollout linktree-backend-prod -n prod --watch
 ### **Passo 7: Verificar rollout completo**
 
 ```bash
-kubectl argo rollouts get rollout linktree-backend-prod -n prod
+kubectl argo rollouts get rollout linktree-prod-linktree-backend -n prod
 ```
 
 **Saída esperada:**
 ```
-Name:            linktree-backend-prod
+Name:            linktree-prod-linktree-backend
 Namespace:       prod
 Status:          ✔ Healthy
 Strategy:        Canary
@@ -364,8 +364,8 @@ Replicas:
 ```bash
 kubectl get pods -n prod
 # NAME                                    READY   STATUS    RESTARTS   AGE
-# linktree-backend-prod-a1b2c3d-xxxxx     1/1     Running   0          5m
-# linktree-backend-prod-a1b2c3d-yyyyy     1/1     Running   0          3m
+# linktree-prod-linktree-backend-a1b2c3d-xxxxx     1/1     Running   0          5m
+# linktree-prod-linktree-backend-a1b2c3d-yyyyy     1/1     Running   0          3m
 # linktree-prod-postgresql-1              1/1     Running   0          2h
 ```
 
@@ -431,27 +431,27 @@ kubectl get pods -n prod
 
 ### Monitorar rollout em tempo real (WATCH)
 ```bash
-kubectl argo rollouts get rollout linktree-backend-prod -n prod --watch
+kubectl argo rollouts get rollout linktree-prod-linktree-backend -n prod --watch
 ```
 
 ### Ver histórico de rollouts
 ```bash
-kubectl argo rollouts history linktree-backend-prod -n prod
+kubectl argo rollouts history linktree-prod-linktree-backend -n prod
 ```
 
 ### Promover para próximo step
 ```bash
-kubectl argo rollouts promote linktree-backend-prod -n prod
+kubectl argo rollouts promote linktree-prod-linktree-backend -n prod
 ```
 
 ### Abortar rollout em andamento
 ```bash
-kubectl argo rollouts abort linktree-backend-prod -n prod
+kubectl argo rollouts abort linktree-prod-linktree-backend -n prod
 ```
 
 ### Fazer rollback (voltar para versão anterior)
 ```bash
-kubectl argo rollouts undo linktree-backend-prod -n prod
+kubectl argo rollouts undo linktree-prod-linktree-backend -n prod
 ```
 
 ### Ver logs da aplicação
@@ -466,18 +466,18 @@ kubectl get applications -n argocd
 
 ### Forçar sync manual no ArgoCD (caso auto-sync não funcione)
 ```bash
-kubectl -n argocd patch application linktree-backend-prod --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}'
+kubectl -n argocd patch application linktree-prod-linktree-backend --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}'
 ```
 
 ### Testar canary service durante rollout
 ```bash
-kubectl port-forward svc/linktree-backend-prod-canary 8081:8000 -n prod
+kubectl port-forward svc/linktree-prod-linktree-backend-canary 8081:8000 -n prod
 curl http://localhost:8081/api/health
 ```
 
 ### Testar stable service (versão em produção)
 ```bash
-kubectl port-forward svc/linktree-backend-prod 8080:8000 -n prod
+kubectl port-forward svc/linktree-prod-linktree-backend 8080:8000 -n prod
 curl http://localhost:8080/api/health
 ```
 
@@ -489,7 +489,7 @@ curl http://localhost:8080/api/health
 **Causa:** Aguardando promoção manual (comportamento esperado)
 **Solução:**
 ```bash
-kubectl argo rollouts promote linktree-backend-prod -n prod
+kubectl argo rollouts promote linktree-prod-linktree-backend -n prod
 ```
 
 ### Pods canary não inicializam (CrashLoopBackOff)
@@ -510,7 +510,7 @@ kubectl describe pod <pod-name> -n prod
 **Solução:**
 ```bash
 # Forçar refresh
-kubectl -n argocd patch application linktree-backend-prod --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}'
+kubectl -n argocd patch application linktree-prod-linktree-backend --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}'
 ```
 
 ### GitHub Actions falha no push para argocd-gitops
@@ -521,10 +521,10 @@ kubectl -n argocd patch application linktree-backend-prod --type merge -p '{"ope
 **Solução:**
 ```bash
 # Abortar rollout
-kubectl argo rollouts abort linktree-backend-prod -n prod
+kubectl argo rollouts abort linktree-prod-linktree-backend -n prod
 
 # Fazer rollback
-kubectl argo rollouts undo linktree-backend-prod -n prod
+kubectl argo rollouts undo linktree-prod-linktree-backend -n prod
 ```
 
 ---
