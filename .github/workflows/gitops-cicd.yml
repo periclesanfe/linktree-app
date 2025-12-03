@@ -167,9 +167,9 @@ jobs:
 
           if [ -f "$BACKEND_FILE" ]; then
             echo "✅ File found, updating..."
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.tag\").value = \"${SHORT_SHA}\"" "$BACKEND_FILE"
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.repository\").value = \"${BACKEND_IMAGE}\"" "$BACKEND_FILE"
-            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"backend.image.pullPolicy\").value = \"Always\"" "$BACKEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"image.tag\").value = \"${SHORT_SHA}\"" "$BACKEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"image.repository\").value = \"${BACKEND_IMAGE}\"" "$BACKEND_FILE"
+            yq eval -i ".spec.source.helm.parameters[] |= select(.name == \"image.pullPolicy\").value = \"Always\"" "$BACKEND_FILE"
             echo "✅ Updated backend image in $BACKEND_FILE"
             echo ""
             echo "📄 File content after update:"
