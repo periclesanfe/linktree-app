@@ -143,7 +143,15 @@ exports.helloWorld = async (req, res) => {
 
 exports.helloWorld2 = async (req, res) => {
     res.json({ message: 'Hello, World! 2' });
-}
+};
+
+exports.getVersion = async (req, res) => {
+    res.json({
+        version: 'v2.0.0-canary',
+        deploymentType: 'canary',
+        message: 'Testing Canary Deployment Strategy'
+    });
+};
 
 exports.updatePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
