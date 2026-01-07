@@ -16,6 +16,10 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --chown=nodejs:nodejs . .
 
+# Criar pasta de logs com permissões corretas
+RUN mkdir -p /app/logs && \
+    chown -R nodejs:nodejs /app/logs
+
 USER nodejs
 
 EXPOSE 3000
