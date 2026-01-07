@@ -43,15 +43,15 @@ fi
 
 # Para containers antigos
 echo "🛑 Parando containers existentes..."
-docker compose -f docker-compose.prod.yml down || true
+docker compose -f docker-compose.prod.yml --env-file .env.production down || true
 
 # Remove imagens antigas (opcional - descomente se quiser fazer rebuild completo)
 # echo "🗑️  Removendo imagens antigas..."
-# docker compose -f docker-compose.prod.yml down --rmi all
+# docker compose -f docker-compose.prod.yml --env-file .env.production down --rmi all
 
 # Constrói as imagens
 echo "🔨 Construindo imagens Docker..."
-docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml --env-file .env.production build --no-cache
 
 # Inicia os serviços
 echo "▶️  Iniciando serviços..."
@@ -63,12 +63,12 @@ sleep 10
 
 # Verifica status dos containers
 echo "📊 Status dos containers:"
-docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml --env-file .env.production ps
 
 # Mostra logs
 echo ""
 echo "📋 Últimos logs:"
-docker compose -f docker-compose.prod.yml logs --tail=50
+docker compose -f docker-compose.prod.yml --env-file .env.production logs --tail=50
 
 echo ""
 echo -e "${GREEN}✅ Deploy concluído com sucesso!${NC}"
@@ -78,6 +78,6 @@ echo "   Frontend: http://$(curl -s ifconfig.me)"
 echo "   Backend API: http://$(curl -s ifconfig.me):3000"
 echo ""
 echo "📋 Comandos úteis:"
-echo "   Ver logs: docker compose -f docker-compose.prod.yml logs -f"
-echo "   Parar: docker compose -f docker-compose.prod.yml down"
-echo "   Reiniciar: docker compose -f docker-compose.prod.yml restart"
+echo "   Ver logs: docker compose -f docker-compose.prod.yml --env-file .env.production logs -f"
+echo "   Parar: docker compose -f docker-compose.prod.yml --env-file .env.production down"
+echo "   Reiniciar: docker compose -f docker-compose.prod.yml --env-file .env.production restart"
