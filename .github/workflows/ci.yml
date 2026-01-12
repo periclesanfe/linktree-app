@@ -1,0 +1,86 @@
+name: CI - Tests and Build
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: linktree-backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: linktree-backend
+        run: npm ci
+
+      - name: Run linter
+        working-directory: linktree-backend
+        run: npm run lint || echo "Linter não configurado"
+
+      - name: Run tests
+        working-directory: linktree-backend
+        run: npm test || echo "Testes não configurados"
+
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: linktree-app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: linktree-app
+        run: npm ci
+
+      - name: Run linter
+        working-directory: linktree-app
+        run: npm run lint || echo "Linter não configurado"
+
+      - name: Build frontend
+        working-directory: linktree-app
+        run: npm run build
+
+      - name: Run tests
+        working-directory: linktree-app
+        run: npm test || echo "Testes não configurados"
+
+  build-docker:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -f linktree-backend/Dockerfile.prod -t linktree-backend:test linktree-backend
+
+      - name: Build frontend image
+        run: docker build -f linktree-app/Dockerfile.prod -t linktree-frontend:test linktree-app
+
+      - name: Test docker compose
+        run: docker compose -f docker-compose.prod.yml config

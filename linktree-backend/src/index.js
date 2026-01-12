@@ -16,6 +16,7 @@ const redirectRoutes = require('./routes/redirect');
 const analyticsRoutes = require('./routes/analytics');
 const socialIconRoutes = require('./routes/socialIcons');
 const profileRoutes = require('./routes/profile');
+const inviteCodeRoutes = require('./routes/inviteCodes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -74,6 +75,7 @@ app.use('/r', redirectRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/socials', socialIconRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/invite-codes', inviteCodeRoutes);
 
 // 404 Handler
 app.use((req, res) => {

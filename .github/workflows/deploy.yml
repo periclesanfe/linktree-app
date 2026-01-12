@@ -1,0 +1,105 @@
+name: Deploy to Google Cloud VM
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Permite executar manualmente
+
+env:
+  PROJECT_NAME: linktree
+
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VM_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VM
+        env:
+          VM_IP: ${{ secrets.VM_IP }}
+          VM_USER: ${{ secrets.VM_USER }}
+          PROJECT_DIR: ${{ secrets.PROJECT_DIR }}
+        run: |
+          ssh -o StrictHostKeyChecking=no $VM_USER@$VM_IP << 'EOF'
+            set -e
+
+            echo "🚀 Iniciando deploy..."
+
+            # Navegar para o diretório do projeto
+            cd ${{ secrets.PROJECT_DIR }}
+
+            # Pull das últimas mudanças
+            echo "📥 Baixando últimas mudanças do GitHub..."
+            git pull origin main
+
+            # Parar containers
+            echo "⏸️  Parando containers..."
+            docker compose -f docker-compose.prod.yml --env-file .env.production down
+
+            # Aplicar migrations do banco de dados (se necessário)
+            echo "🗄️  Verificando migrations do banco..."
+            # Garante que o container do banco está rodando
+            docker compose -f docker-compose.prod.yml --env-file .env.production up -d db
+            sleep 5
+
+            # Aplicar todas as migrations
+            for migration in db-init/*.sql; do
+              echo "Aplicando $migration..."
+              docker exec -i linktree-db psql -U linktree_user -d linktree < "$migration" 2>/dev/null || echo "Migration já aplicada ou erro (continuando...)"
+            done
+
+            # Rebuild e restart dos containers
+            echo "🔨 Reconstruindo e iniciando containers..."
+            docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+
+            # Aguardar containers iniciarem
+            echo "⏳ Aguardando containers iniciarem..."
+            sleep 10
+
+            # Limpar imagens antigas
+            echo "🧹 Limpando imagens antigas..."
+            docker image prune -af
+
+            # Verificar status
+            echo "✅ Verificando status dos containers..."
+            docker compose -f docker-compose.prod.yml ps
+
+            echo "🎉 Deploy concluído com sucesso!"
+          EOF
+
+      - name: Health Check
+        run: |
+          echo "🏥 Verificando saúde da aplicação..."
+          sleep 5
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.VM_IP }}/api/health || echo "000")
+
+          if [ "$response" = "200" ]; then
+            echo "✅ Aplicação está saudável!"
+          else
+            echo "❌ Aplicação retornou código $response"
+            exit 1
+          fi
+
+      - name: Cleanup SSH
+        if: always()
+        run: rm -f ~/.ssh/id_rsa
+
+      - name: Send notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Deploy realizado com sucesso!"
+          else
+            echo "❌ Deploy falhou!"
+          fi

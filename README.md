@@ -1020,9 +1020,17 @@ chore(deps): atualiza dependências
 
 ## 📚 Documentação Adicional
 
+### Deployment & DevOps
+- **[🚀 Quick Start CI/CD](QUICK_START_CICD.md)** - Configure deploy automático em 3 passos
+- **[📖 Setup CI/CD Completo](SETUP_CI_CD.md)** - Documentação detalhada do pipeline
 - **[Setup GitOps Completo](docs/GITOPS_SETUP.md)** - Configuração do ArgoCD do zero
 - **[Guia de Deployment](docs/DEPLOYMENT.md)** - Deploy em produção e troubleshooting
+- **[Guia de Deploy GCP](DEPLOY_GCP.md)** - Deploy em VM do Google Cloud
 - **[Helm Chart README](helm/README.md)** - Documentação do Helm Chart
+
+### Estratégias de Deploy
+- **[Blue-Green Deployment](BLUEGREEN-GUIDE.md)** - Deploy sem downtime
+- **[Canary Deployment](CANARY-GUIDE.md)** - Deploy gradual com rollback automático
 
 ---
 

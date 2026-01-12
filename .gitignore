@@ -51,3 +51,12 @@ values.*.secret.yaml
 
 # Temporary files
 .DS_Store
+
+# CI/CD configuration (contains sensitive paths/IPs)
+.cicd-config
+
+# SSH keys (NEVER commit)
+*.pem
+*.key
+id_rsa*
+github_actions_deploy*

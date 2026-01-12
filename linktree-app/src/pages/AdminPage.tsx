@@ -7,6 +7,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import LinkModal from '../components/LinkModal';
 import LinkCard from '../components/LinkCard';
 import ConfirmModal from '../components/ConfirmModal';
+import InviteCodesPanel from '../components/InviteCodesPanel';
 
 // Tipagens para nossos dados
 interface Link {
@@ -57,7 +58,7 @@ const AdminPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Estado para controlar a aba ativa
-  const [activeTab, setActiveTab] = useState<'perfil' | 'links' | 'configuracoes'>('perfil');
+  const [activeTab, setActiveTab] = useState<'perfil' | 'links' | 'configuracoes' | 'codigos'>('perfil');
 
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -413,6 +414,21 @@ const AdminPage = () => {
                 <span className="text-xs sm:text-sm">Config</span>
               </div>
             </button>
+            <button
+              onClick={() => setActiveTab('codigos')}
+              className={`flex-1 px-2 py-4 rounded-xl font-semibold transition-all ${
+                activeTab === 'codigos'
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <div className="flex flex-col items-center justify-center gap-1.5">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                <span className="text-xs sm:text-sm">Códigos</span>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -726,6 +742,21 @@ const AdminPage = () => {
           )}
         </div>
         </section>
+        )}
+
+        {/* Conteúdo da Aba Códigos de Convite */}
+        {activeTab === 'codigos' && (
+          <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Códigos de Convite</h2>
+            </div>
+            <InviteCodesPanel />
+          </section>
         )}
 
         <LinkModal isOpen={isModalOpen} onClose={handleCloseModal} onSave={handleSaveLink} existingLink={editingLink} />

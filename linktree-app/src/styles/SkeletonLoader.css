@@ -1,0 +1,97 @@
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0px,
+    #e0e0e0 40px,
+    #f0f0f0 80px
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 4px;
+}
+
+.skeleton-text {
+  width: 100%;
+  height: 16px;
+  margin-bottom: 8px;
+}
+
+.skeleton-title {
+  width: 60%;
+  height: 24px;
+  margin-bottom: 12px;
+}
+
+.skeleton-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-bottom: 12px;
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 200px;
+  margin-bottom: 12px;
+}
+
+.skeleton-card {
+  width: 100%;
+  height: 120px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+.skeleton-link {
+  width: 100%;
+  height: 56px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+}
+
+.skeleton-button {
+  width: 120px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+/* Profile skeleton layout */
+.skeleton-profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.skeleton-profile-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Admin skeleton layout */
+.skeleton-admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.skeleton-admin-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
