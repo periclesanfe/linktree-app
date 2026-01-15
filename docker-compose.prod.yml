@@ -49,7 +49,7 @@ services:
       context: ./linktree-app
       dockerfile: Dockerfile
       args:
-        VITE_BACKEND_URL: ${VITE_BACKEND_URL}
+        VITE_BACKEND_URL: ""
     container_name: linktree-frontend
     restart: always
     ports:
