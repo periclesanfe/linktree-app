@@ -3,14 +3,14 @@
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS invite_codes (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code VARCHAR(14) UNIQUE NOT NULL, -- XXXX-XXXX-XXXX
-    created_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    used_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_by UUID REFERENCES users(id) ON DELETE CASCADE,
+    used_by UUID REFERENCES users(id) ON DELETE SET NULL,
     is_used BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    used_at TIMESTAMP,
-    expires_at TIMESTAMP, -- NULL = nunca expira
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    used_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ, -- NULL = nunca expira
     notes TEXT -- Notas do admin sobre o código
 );
 
@@ -25,9 +25,9 @@ CREATE INDEX IF NOT EXISTS idx_invite_codes_created_by ON invite_codes(created_b
 
 -- Tabela para rastrear visualizações de perfil
 CREATE TABLE IF NOT EXISTS profile_views (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    viewed_at TIMESTAMPTZ DEFAULT NOW(),
     ip_address VARCHAR(45), -- IPv4 ou IPv6
     user_agent TEXT,
     referrer TEXT,
@@ -123,8 +123,8 @@ $$ LANGUAGE plpgsql;
 -- Função para gerar múltiplos códigos de uma vez
 CREATE OR REPLACE FUNCTION generate_multiple_invite_codes(
     p_count INTEGER,
-    p_created_by INTEGER,
-    p_expires_at TIMESTAMP DEFAULT NULL
+    p_created_by UUID,
+    p_expires_at TIMESTAMPTZ DEFAULT NULL
 )
 RETURNS TABLE(code VARCHAR) AS $$
 DECLARE
