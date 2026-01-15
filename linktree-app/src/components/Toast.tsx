@@ -1,5 +1,5 @@
 import React from 'react';
-import { useToast, Toast as ToastType } from '../context/ToastContext';
+import { useToast, type Toast as ToastType } from '../context/ToastContext';
 import '../styles/Toast.css';
 
 const Toast: React.FC = () => {
