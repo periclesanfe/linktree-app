@@ -1,9 +1,11 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  // Usa a variável de ambiente, com um fallback para segurança.
-  // Adicionamos /api aqui para não precisar repetir em cada chamada.
-  baseURL: `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/api`,
+  // Em produção, usa URL relativa para o Nginx rotear.
+  // Em desenvolvimento, usa localhost:3000.
+  baseURL: import.meta.env.VITE_BACKEND_URL !== undefined 
+    ? `${import.meta.env.VITE_BACKEND_URL}/api` 
+    : '/api',
 });
 
 // Interceptor para adicionar o token JWT em todas as requisições
