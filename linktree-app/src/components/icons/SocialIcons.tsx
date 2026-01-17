@@ -127,4 +127,19 @@ export const LINK_TYPE_ICONS = {
   tiktok: TikTokIcon,
 } as const;
 
+// Social platform icons for the footer social icons section
+export const SOCIAL_PLATFORM_ICONS: Record<string, React.FC<IconProps>> = {
+  website: WebsiteIcon,
+  whatsapp: WhatsAppIcon,
+  instagram: InstagramIcon,
+  email: EmailIcon,
+  phone: PhoneIcon,
+  youtube: YouTubeIcon,
+  tiktok: TikTokIcon,
+  // Aliases for common variations
+  mail: EmailIcon,
+  tel: PhoneIcon,
+  link: WebsiteIcon,
+};
+
 export type LinkType = keyof typeof LINK_TYPE_ICONS;

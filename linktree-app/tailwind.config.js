@@ -7,23 +7,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // MeuHub Brand Colors
-        meuhub: {
-          coral: {
-            DEFAULT: '#E8A87C',
-            light: '#F5D5C3',
-            dark: '#D4956B',
-            darker: '#C4865C',
-          },
-          cream: '#FDF8F5',
-          peach: '#FCEEE6',
-          text: '#3D3D3D',
-          border: '#E5DDD8',
-          // Cores principais para uso nas classes Tailwind
-          primary: '#E8A87C',
-          secondary: '#D4A574',
-          accent: '#E27D60',
-        },
+        // MeuHub Brand Colors - Flat structure for proper class generation
+        'meuhub-primary': '#E8A87C',
+        'meuhub-secondary': '#D4A574',
+        'meuhub-accent': '#E27D60',
+        'meuhub-cream': '#FDF8F5',
+        'meuhub-peach': '#FCEEE6',
+        'meuhub-text': '#3D3D3D',
+        'meuhub-border': '#E5DDD8',
+        'meuhub-coral': '#E8A87C',
+        'meuhub-coral-light': '#F5D5C3',
+        'meuhub-coral-dark': '#D4956B',
       },
       animation: {
         'fade-in-up': 'fadeInUp 0.6s ease-out forwards',

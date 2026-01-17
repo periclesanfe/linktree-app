@@ -489,7 +489,7 @@ const AdminPage = () => {
                   </p>
                   <button
                     onClick={handleImageUpload}
-                    className="w-full sm:w-auto bg-meuhub-primary text-white px-4 py-2 rounded-lg hover:bg-meuhub-accent transition text-sm sm:text-base"
+                    className="w-full sm:w-auto bg-white text-gray-800 border-2 border-meuhub-primary px-4 py-2 rounded-lg hover:bg-meuhub-cream transition text-sm sm:text-base font-medium mt-2"
                   >
                     Salvar Imagem
                   </button>
@@ -542,7 +542,7 @@ const AdminPage = () => {
                       </p>
                       <button
                         onClick={handleBackgroundImageUpload}
-                        className="w-full bg-meuhub-primary text-white px-4 py-2.5 rounded-lg hover:bg-meuhub-accent transition font-medium shadow-md"
+                        className="w-full bg-white text-gray-800 border-2 border-meuhub-primary px-4 py-2.5 rounded-lg hover:bg-meuhub-cream transition font-medium"
                       >
                         Salvar Imagem
                       </button>
@@ -588,7 +588,7 @@ const AdminPage = () => {
                   </div>
                   <button
                     onClick={handleAccentColorUpdate}
-                    className="w-full bg-meuhub-primary text-white px-4 py-2.5 rounded-lg hover:bg-meuhub-accent transition font-medium shadow-md"
+                    className="w-full bg-white text-gray-800 border-2 border-meuhub-primary px-4 py-2.5 rounded-lg hover:bg-meuhub-cream transition font-medium"
                   >
                     Salvar Cor
                   </button>

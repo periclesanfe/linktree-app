@@ -11,6 +11,18 @@
   --radius-3xl: 1.5rem;
   --radius: 0.625rem;
 
+  /* MeuHub Brand Colors */
+  --color-meuhub-primary: #E8A87C;
+  --color-meuhub-secondary: #D4A574;
+  --color-meuhub-accent: #E27D60;
+  --color-meuhub-cream: #FDF8F5;
+  --color-meuhub-peach: #FCEEE6;
+  --color-meuhub-text: #3D3D3D;
+  --color-meuhub-border: #E5DDD8;
+  --color-meuhub-coral: #E8A87C;
+  --color-meuhub-coral-light: #F5D5C3;
+  --color-meuhub-coral-dark: #D4956B;
+
   /* Colors - mapped from CSS variables for shadcn compatibility */
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));

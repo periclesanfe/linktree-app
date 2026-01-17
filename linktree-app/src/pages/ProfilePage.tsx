@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import apiClient from '../api/apiClient';
-import { LINK_TYPE_ICONS } from '../components/icons/SocialIcons';
+import { LINK_TYPE_ICONS, SOCIAL_PLATFORM_ICONS } from '../components/icons/SocialIcons';
 
 // Detecta se estamos em um WebView in-app (Instagram, TikTok, Facebook, etc.)
 const isInAppWebView = (): boolean => {
@@ -85,7 +85,7 @@ const ProfilePage = () => {
         });
         setProfile(response.data);
       } catch (err) {
-        setError('Perfil não encontrado.');
+        setError('Perfil nao encontrado.');
         console.error(err);
       } finally {
         setLoading(false);
@@ -96,7 +96,7 @@ const ProfilePage = () => {
 
   // Monta a URL base do backend para redirecionamento
   const getRedirectUrl = (linkId: string): string => {
-    // Em produção, usa URL relativa que o Nginx roteia para o backend
+    // Em producao, usa URL relativa que o Nginx roteia para o backend
     // Em desenvolvimento, usa a URL do backend diretamente
     const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
     return `${backendUrl}/r/${linkId}`;
@@ -115,110 +115,201 @@ const ProfilePage = () => {
       return;
     }
     
-    // Em navegadores desktop/normais, deixamos o comportamento padrão do <a>
-    // O href já está configurado, então o clique funciona naturalmente
+    // Em navegadores desktop/normais, deixamos o comportamento padrao do <a>
+    // O href ja esta configurado, entao o clique funciona naturalmente
   }, []);
 
-  if (loading) return <div className="text-center text-white p-10">Carregando perfil...</div>;
-  if (error) return <div className="text-center text-red-500 p-10">{error}</div>;
+  // Loading state with skeleton
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-meuhub-cream via-meuhub-peach to-meuhub-coral-light flex flex-col items-center p-4">
+        <div className="w-full max-w-md mx-auto mt-12 animate-pulse">
+          {/* Profile skeleton */}
+          <div className="flex flex-col items-center">
+            <div className="w-24 h-24 rounded-full bg-white/50 mb-4" />
+            <div className="h-6 w-32 bg-white/50 rounded mb-2" />
+            <div className="h-4 w-48 bg-white/50 rounded" />
+          </div>
+          {/* Links skeleton */}
+          <div className="mt-8 space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-16 bg-white/30 rounded-2xl" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const backgroundStyle = profile?.background_image_url
-    ? `url(${profile.background_image_url})`
-    : 'linear-gradient(to bottom, #1f2937, #111827)';
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-meuhub-cream via-meuhub-peach to-meuhub-coral-light flex items-center justify-center p-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center shadow-lg">
+          <div className="text-6xl mb-4">:(</div>
+          <p className="text-meuhub-text text-lg">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
-  console.log('Background style being applied:', {
-    hasBackgroundUrl: !!profile?.background_image_url,
-    urlPreview: profile?.background_image_url?.substring(0, 50),
-    backgroundStyle: backgroundStyle.substring(0, 50)
-  });
+  // Determine background style
+  const hasCustomBackground = !!profile?.background_image_url;
+  const accentColor = profile?.accent_color || '#E8A87C'; // Default to MeuHub primary
 
   return (
     <div
-      className="text-white min-h-screen p-4 sm:p-6 md:p-8 flex flex-col items-center bg-cover bg-center bg-no-repeat relative"
+      className="min-h-screen flex flex-col items-center relative"
       style={{
-        backgroundImage: backgroundStyle
+        backgroundImage: hasCustomBackground
+          ? `url(${profile.background_image_url})`
+          : 'linear-gradient(135deg, #FDF8F5 0%, #FCEEE6 25%, #F5D5C3 50%, #E8A87C 100%)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
       }}
     >
-      {/* Overlay para melhorar a legibilidade do texto sobre a imagem */}
-      {/* Temporariamente desabilitado para debug */}
-      {/* {profile?.background_image_url && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 z-0"></div>
-      )} */}
+      {/* Overlay for custom backgrounds to improve readability */}
+      {hasCustomBackground && (
+        <div className="absolute inset-0 bg-black/30 z-0" />
+      )}
 
-      <main className="w-full max-w-2xl mx-auto relative z-10 px-2 sm:px-4">
-        {/* Perfil Header */}
-        <header className="text-center mt-8 sm:mt-12 mb-6 sm:mb-8">
-          <img
-            src={profile?.profile_image_url || 'https://via.placeholder.com/150'}
-            alt={`Foto de ${profile?.display_name}`}
-            className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full mx-auto mb-4 border-4 border-white shadow-lg"
-          />
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">@{profile?.username}</h1>
-          <p className="mt-2 text-sm sm:text-base text-gray-300 px-4">{profile?.bio}</p>
+      <main className="w-full max-w-md mx-auto relative z-10 px-4 py-8 sm:py-12">
+        {/* Profile Header */}
+        <header 
+          className="text-center mb-8 opacity-0 animate-fade-in-up"
+          style={{ animationFillMode: 'forwards' }}
+        >
+          <div className="relative inline-block mb-4">
+            <img
+              src={profile?.profile_image_url || 'https://via.placeholder.com/150'}
+              alt={`Foto de ${profile?.display_name}`}
+              className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mx-auto border-4 border-white shadow-xl object-cover"
+            />
+          </div>
+          <h1 
+            className={`text-2xl sm:text-3xl font-bold ${hasCustomBackground ? 'text-white' : 'text-meuhub-text'}`}
+          >
+            @{profile?.username}
+          </h1>
+          {profile?.bio && (
+            <p 
+              className={`mt-2 text-sm sm:text-base max-w-xs mx-auto ${hasCustomBackground ? 'text-white/90' : 'text-meuhub-text/70'}`}
+            >
+              {profile.bio}
+            </p>
+          )}
         </header>
         
-        {/* Lista de Links */}
-        <section className="space-y-8 sm:space-y-10">
-          {profile?.links.map(link => (
-            <a
-              key={link.id}
-              href={getRedirectUrl(link.id)}
-              onClick={(e) => handleLinkClick(e, link.id)}
-              rel="noopener noreferrer"
-              className="block relative pt-12 sm:pt-14"
-            >
-              {/* Imagem flutuando (metade fora, metade dentro) */}
-              {link.cover_image_url ? (
-                <div className="absolute left-1/2 -translate-x-1/2 -top-6 sm:-top-8 z-10">
-                  <div
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 shadow-xl bg-cover bg-center"
-                    style={{
-                      backgroundImage: `url(${link.cover_image_url})`,
-                      borderColor: profile.accent_color || '#6366f1'
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="absolute left-1/2 -translate-x-1/2 -top-6 sm:-top-8 z-10">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center bg-white shadow-xl border-4"
-                       style={{ borderColor: profile.accent_color || '#6366f1' }}>
-                    {(() => {
-                      const IconComponent = LINK_TYPE_ICONS[link.link_type as keyof typeof LINK_TYPE_ICONS] || LINK_TYPE_ICONS['website'];
-                      return IconComponent ? <IconComponent size={40} className="text-gray-600" /> : null;
-                    })()}
-                  </div>
-                </div>
-              )}
-
-              {/* Card do Link */}
-              <div
-                className="p-4 sm:p-5 rounded-2xl text-center font-semibold transition-all transform hover:scale-105 active:scale-95 shadow-xl"
-                style={{
-                  backgroundColor: profile.accent_color || '#6366f1',
-                  color: '#ffffff'
+        {/* Links List */}
+        <section className="space-y-4">
+          {profile?.links.map((link, index) => {
+            const IconComponent = LINK_TYPE_ICONS[link.link_type as keyof typeof LINK_TYPE_ICONS] || LINK_TYPE_ICONS['website'];
+            
+            return (
+              <a
+                key={link.id}
+                href={getRedirectUrl(link.id)}
+                onClick={(e) => handleLinkClick(e, link.id)}
+                rel="noopener noreferrer"
+                className="block opacity-0 animate-fade-in-up"
+                style={{ 
+                  animationDelay: `${(index + 1) * 100}ms`,
+                  animationFillMode: 'forwards'
                 }}
               >
-                <span className="text-base sm:text-lg block mt-2">{link.title}</span>
-              </div>
-            </a>
-          ))}
+                <div
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-white/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-2"
+                  style={{ borderColor: accentColor }}
+                >
+                  {/* Icon or Cover Image */}
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+                    style={{ backgroundColor: link.cover_image_url ? 'transparent' : `${accentColor}20` }}
+                  >
+                    {link.cover_image_url ? (
+                      <img 
+                        src={link.cover_image_url} 
+                        alt="" 
+                        className="w-full h-full object-cover rounded-xl"
+                      />
+                    ) : (
+                      IconComponent && <IconComponent size={24} className="text-meuhub-accent" />
+                    )}
+                  </div>
+                  
+                  {/* Title */}
+                  <span className="flex-1 font-semibold text-meuhub-text text-base sm:text-lg">
+                    {link.title}
+                  </span>
+                  
+                  {/* Arrow */}
+                  <svg 
+                    className="w-5 h-5 text-meuhub-text/40" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </a>
+            );
+          })}
         </section>
 
-        {/* Ícones Sociais */}
-        <footer className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-8 mb-8">
-          {profile?.socialIcons.map(icon => (
-            <a
-              key={icon.id}
-              href={icon.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition text-sm sm:text-base"
-            >
-              {/* Idealmente, aqui teríamos SVGs para cada ícone */}
-              <span className="capitalize">{icon.platform}</span>
-            </a>
-          ))}
-        </footer>
+        {/* Social Icons */}
+        {profile?.socialIcons && profile.socialIcons.length > 0 && (
+          <footer 
+            className="flex flex-wrap justify-center gap-4 mt-8 opacity-0 animate-fade-in-up"
+            style={{ 
+              animationDelay: `${((profile?.links?.length || 0) + 2) * 100}ms`,
+              animationFillMode: 'forwards'
+            }}
+          >
+            {profile.socialIcons.map(icon => {
+              const SocialIcon = SOCIAL_PLATFORM_ICONS[icon.platform.toLowerCase()];
+              
+              return (
+                <a
+                  key={icon.id}
+                  href={icon.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 ${
+                    hasCustomBackground 
+                      ? 'bg-white/20 hover:bg-white/40 text-white' 
+                      : 'bg-white shadow-md hover:shadow-lg text-meuhub-text'
+                  }`}
+                  title={icon.platform}
+                >
+                  {SocialIcon ? (
+                    <SocialIcon size={20} />
+                  ) : (
+                    <span className="text-xs font-medium uppercase">{icon.platform.slice(0, 2)}</span>
+                  )}
+                </a>
+              );
+            })}
+          </footer>
+        )}
+
+        {/* Powered by MeuHub */}
+        <div 
+          className={`text-center mt-12 opacity-0 animate-fade-in-up ${hasCustomBackground ? 'text-white/60' : 'text-meuhub-text/40'}`}
+          style={{ 
+            animationDelay: `${((profile?.links?.length || 0) + 3) * 100}ms`,
+            animationFillMode: 'forwards'
+          }}
+        >
+          <a 
+            href="https://meuhub.app.br" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs hover:opacity-100 transition-opacity"
+          >
+            Powered by MeuHub
+          </a>
+        </div>
       </main>
     </div>
   );
