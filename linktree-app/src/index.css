@@ -1,1 +1,260 @@
 @import "tailwindcss";
+
+/* ===== Tailwind v4 Theme Configuration ===== */
+@theme {
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius: 0.625rem;
+
+  /* Colors - mapped from CSS variables for shadcn compatibility */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  /* Chart colors */
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  /* Sidebar colors */
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+}
+
+/* ===== CSS Variables for Light/Dark Theme ===== */
+:root {
+  /* 
+   * Paleta de Cores Quentes Personalizada
+   * Primary: Coral/Pêssego (#E8A87C)
+   * Secondary: Rosa dourado (#D4A574)
+   * Background: Creme claro (#FDF8F5)
+   * Accent: Rosa coral (#E27D60)
+   * Foreground: Marrom escuro
+   */
+
+  /* Background & Foreground */
+  --background: 25 60% 98%;          /* #FDF8F5 - Creme claro */
+  --foreground: 20 25% 20%;          /* Marrom escuro para texto */
+
+  /* Card */
+  --card: 30 50% 99%;                /* Branco quente */
+  --card-foreground: 20 25% 20%;
+
+  /* Popover */
+  --popover: 30 50% 99%;
+  --popover-foreground: 20 25% 20%;
+
+  /* Primary - Coral/Pêssego (#E8A87C) */
+  --primary: 25 70% 70%;             /* #E8A87C */
+  --primary-foreground: 25 30% 15%;  /* Texto escuro no primary */
+
+  /* Secondary - Rosa dourado (#D4A574) */
+  --secondary: 30 50% 65%;           /* #D4A574 */
+  --secondary-foreground: 30 25% 15%;
+
+  /* Muted */
+  --muted: 25 25% 92%;               /* Creme mais escuro */
+  --muted-foreground: 20 15% 45%;
+
+  /* Accent - Rosa coral (#E27D60) */
+  --accent: 12 70% 63%;              /* #E27D60 */
+  --accent-foreground: 12 30% 15%;
+
+  /* Destructive */
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 98%;
+
+  /* Border & Input */
+  --border: 25 30% 85%;              /* Borda quente */
+  --input: 25 30% 85%;
+  --ring: 25 70% 70%;                /* Mesmo que primary */
+
+  /* Chart colors - tons quentes complementares */
+  --chart-1: 25 70% 70%;             /* Coral */
+  --chart-2: 30 50% 65%;             /* Rosa dourado */
+  --chart-3: 12 70% 63%;             /* Rosa coral */
+  --chart-4: 40 60% 70%;             /* Dourado */
+  --chart-5: 15 55% 55%;             /* Terracota */
+
+  /* Sidebar */
+  --sidebar-background: 25 45% 96%;
+  --sidebar-foreground: 20 25% 20%;
+  --sidebar-primary: 25 70% 70%;
+  --sidebar-primary-foreground: 25 30% 15%;
+  --sidebar-accent: 12 70% 63%;
+  --sidebar-accent-foreground: 12 30% 15%;
+  --sidebar-border: 25 30% 85%;
+  --sidebar-ring: 25 70% 70%;
+}
+
+/* Dark theme - versão escura da paleta quente */
+.dark {
+  --background: 20 20% 10%;          /* Marrom muito escuro */
+  --foreground: 25 30% 92%;          /* Creme claro */
+
+  --card: 20 18% 14%;
+  --card-foreground: 25 30% 92%;
+
+  --popover: 20 18% 14%;
+  --popover-foreground: 25 30% 92%;
+
+  --primary: 25 65% 60%;             /* Coral mais suave */
+  --primary-foreground: 20 20% 10%;
+
+  --secondary: 30 40% 50%;           /* Rosa dourado mais escuro */
+  --secondary-foreground: 25 30% 92%;
+
+  --muted: 20 15% 20%;
+  --muted-foreground: 25 20% 65%;
+
+  --accent: 12 60% 55%;              /* Rosa coral */
+  --accent-foreground: 20 20% 10%;
+
+  --destructive: 0 62% 45%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 20 15% 22%;
+  --input: 20 15% 22%;
+  --ring: 25 65% 60%;
+
+  --chart-1: 25 65% 60%;
+  --chart-2: 30 40% 50%;
+  --chart-3: 12 60% 55%;
+  --chart-4: 40 50% 55%;
+  --chart-5: 15 45% 45%;
+
+  --sidebar-background: 20 18% 12%;
+  --sidebar-foreground: 25 30% 92%;
+  --sidebar-primary: 25 65% 60%;
+  --sidebar-primary-foreground: 20 20% 10%;
+  --sidebar-accent: 12 60% 55%;
+  --sidebar-accent-foreground: 20 20% 10%;
+  --sidebar-border: 20 15% 22%;
+  --sidebar-ring: 25 65% 60%;
+}
+
+/* ===== Base Styles ===== */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* ==========================================
+   Login Page Animations
+   ========================================== */
+
+/* Fade in and slide up animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scale in animation for logo */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Floating animation for decorative elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+/* Shake animation for error messages */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Animation utility classes */
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Animation delay utilities */
+.animation-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
+}

@@ -1,5 +1,5 @@
 // src/components/AnalyticsModal.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import apiClient from '../api/apiClient';
 
 interface AnalyticsData {
@@ -28,13 +28,7 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, linkId
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(30);
 
-  useEffect(() => {
-    if (isOpen && linkId) {
-      fetchAnalytics();
-    }
-  }, [isOpen, linkId, period]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get(`/analytics/links/${linkId}?days=${period}`);
@@ -44,7 +38,13 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, linkId
     } finally {
       setLoading(false);
     }
-  };
+  }, [linkId, period]);
+
+  useEffect(() => {
+    if (isOpen && linkId) {
+      fetchAnalytics();
+    }
+  }, [isOpen, linkId, fetchAnalytics]);
 
   if (!isOpen) return null;
 

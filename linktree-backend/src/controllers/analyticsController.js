@@ -1,6 +1,7 @@
 const pool = require('../db/pool');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
+const { buildRedirectUrl } = require('../utils/linkUrlBuilder');
 
 // Função auxiliar para obter IP do visitante
 function getClientIp(req) {
@@ -57,13 +58,13 @@ exports.recordClickAndRedirect = async (req, res) => {
     const { linkId } = req.params;
 
     try {
-        const linkResult = await pool.query("SELECT url FROM links WHERE id = $1", [linkId]);
+        const linkResult = await pool.query("SELECT url, link_type, metadata FROM links WHERE id = $1", [linkId]);
 
         if (linkResult.rows.length === 0) {
             return res.status(404).json({ msg: 'Link não encontrado.' });
         }
 
-        const originalUrl = linkResult.rows[0].url;
+        const originalUrl = buildRedirectUrl(linkResult.rows[0]);
 
         // Captura informações do visitante
         const clientIp = getClientIp(req);
@@ -85,7 +86,22 @@ exports.recordClickAndRedirect = async (req, res) => {
             error: err.message
         }));
 
-        res.redirect(301, originalUrl);
+        // Headers para melhor compatibilidade com Safari/iOS WebViews
+        // - Cache-Control: Evita cache agressivo do Safari que pode quebrar redirecionamentos
+        // - X-Content-Type-Options: Evita sniffing de conteúdo
+        res.set({
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'X-Content-Type-Options': 'nosniff'
+        });
+
+        // Usamos 302 (Found) em vez de 301 (Moved Permanently) porque:
+        // 1. 301 é cacheado agressivamente por navegadores, especialmente Safari
+        // 2. Se a URL de destino mudar, o cache do 301 pode continuar redirecionando para a antiga
+        // 3. 302 funciona melhor em WebViews in-app (Instagram, TikTok, etc.)
+        // 4. Para analytics, queremos que cada clique passe pelo servidor
+        res.redirect(302, originalUrl);
 
     } catch (err) {
         logger.error('Analytics error - recordClick', {

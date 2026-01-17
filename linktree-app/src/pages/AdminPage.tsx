@@ -56,6 +56,9 @@ const AdminPage = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Estado para controlar a aba ativa
   const [activeTab, setActiveTab] = useState<'perfil' | 'links' | 'configuracoes' | 'codigos'>('perfil');
@@ -174,9 +177,10 @@ const AdminPage = () => {
       });
       setUser(currentUser => currentUser ? { ...currentUser, ...response.data } : null);
       toast.success('Dados atualizados com sucesso!', { id: toastId });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao atualizar dados:', error);
-      const errorMsg = error.response?.data?.msg || 'Não foi possível atualizar os dados.';
+      const err = error as { response?: { data?: { msg?: string } } };
+      const errorMsg = err.response?.data?.msg || 'Não foi possível atualizar os dados.';
       toast.error(errorMsg, { id: toastId });
     }
   };
@@ -208,9 +212,10 @@ const AdminPage = () => {
       setNewPassword('');
       setConfirmPassword('');
       toast.success('Senha alterada com sucesso!', { id: toastId });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao alterar senha:', error);
-      const errorMsg = error.response?.data?.msg || 'Não foi possível alterar a senha.';
+      const err = error as { response?: { data?: { msg?: string } } };
+      const errorMsg = err.response?.data?.msg || 'Não foi possível alterar a senha.';
       toast.error(errorMsg, { id: toastId });
     }
   };
@@ -290,31 +295,38 @@ const AdminPage = () => {
   };
 
   if (loading) {
-    return <div className="text-center p-8">Carregando...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-meuhub-cream to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-meuhub-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-meuhub-text">Carregando...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-meuhub-cream to-white">
       <Toaster
         position="top-right"
         toastOptions={{
           duration: 3000,
           style: {
             background: '#fff',
-            color: '#363636',
+            color: '#3D3D3D',
             padding: '16px',
             borderRadius: '12px',
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           },
           success: {
             iconTheme: {
-              primary: '#10b981',
+              primary: '#E8A87C',
               secondary: '#fff',
             },
           },
           error: {
             iconTheme: {
-              primary: '#ef4444',
+              primary: '#E27D60',
               secondary: '#fff',
             },
           },
@@ -332,18 +344,21 @@ const AdminPage = () => {
 
       <div className="container mx-auto p-4 sm:p-8 max-w-6xl">
         {/* Header Melhorado */}
-        <header className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <header className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-meuhub-secondary/20">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Meu Painel
-              </h1>
-              <p className="text-gray-600 mt-1">Gerencie seus links e perfil</p>
+            <div className="flex items-center gap-4">
+              <img src="/logo_transparente.png" alt="MeuHub" className="w-12 h-12" />
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-meuhub-text">
+                  Meu Painel
+                </h1>
+                <p className="text-meuhub-text/70 mt-1">Gerencie seus links e perfil</p>
+              </div>
             </div>
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => navigate(`/profile/${user?.username}`)}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-5 py-2.5 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/30 font-medium"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-meuhub-primary to-meuhub-secondary text-meuhub-text px-5 py-2.5 rounded-xl hover:from-meuhub-accent hover:to-meuhub-primary hover:text-white transition-all shadow-lg shadow-meuhub-primary/30 font-medium"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -353,7 +368,7 @@ const AdminPage = () => {
               </button>
               <button
                 onClick={handleLogout}
-                className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl transition-all font-medium"
+                className="inline-flex items-center gap-2 bg-meuhub-cream hover:bg-meuhub-secondary/20 text-meuhub-text px-5 py-2.5 rounded-xl transition-all font-medium border border-meuhub-secondary/30"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -365,14 +380,14 @@ const AdminPage = () => {
         </header>
 
         {/* Navegação por Abas */}
-        <div className="bg-white rounded-2xl shadow-lg p-2 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg p-2 mb-8 border border-meuhub-secondary/20">
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('perfil')}
               className={`flex-1 px-2 py-4 rounded-xl font-semibold transition-all ${
                 activeTab === 'perfil'
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-meuhub-primary to-meuhub-secondary text-meuhub-text shadow-lg'
+                  : 'bg-meuhub-cream text-meuhub-text hover:bg-meuhub-secondary/20'
               }`}
             >
               <div className="flex flex-col items-center justify-center gap-1.5">
@@ -386,8 +401,8 @@ const AdminPage = () => {
               onClick={() => setActiveTab('links')}
               className={`flex-1 px-2 py-4 rounded-xl font-semibold transition-all ${
                 activeTab === 'links'
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-meuhub-accent to-meuhub-primary text-meuhub-text shadow-lg'
+                  : 'bg-meuhub-cream text-meuhub-text hover:bg-meuhub-secondary/20'
               }`}
             >
               <div className="flex flex-col items-center justify-center gap-1.5">
@@ -402,8 +417,8 @@ const AdminPage = () => {
               onClick={() => setActiveTab('configuracoes')}
               className={`flex-1 px-2 py-4 rounded-xl font-semibold transition-all ${
                 activeTab === 'configuracoes'
-                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-meuhub-secondary to-meuhub-accent text-meuhub-text shadow-lg'
+                  : 'bg-meuhub-cream text-meuhub-text hover:bg-meuhub-secondary/20'
               }`}
             >
               <div className="flex flex-col items-center justify-center gap-1.5">
@@ -418,8 +433,8 @@ const AdminPage = () => {
               onClick={() => setActiveTab('codigos')}
               className={`flex-1 px-2 py-4 rounded-xl font-semibold transition-all ${
                 activeTab === 'codigos'
-                  ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-meuhub-primary to-meuhub-accent text-meuhub-text shadow-lg'
+                  : 'bg-meuhub-cream text-meuhub-text hover:bg-meuhub-secondary/20'
               }`}
             >
               <div className="flex flex-col items-center justify-center gap-1.5">
@@ -434,14 +449,14 @@ const AdminPage = () => {
 
         {/* Conteúdo da Aba Perfil */}
         {activeTab === 'perfil' && (
-        <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg mb-8">
+        <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg mb-8 border border-meuhub-secondary/20">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-meuhub-primary to-meuhub-secondary flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Meu Perfil</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-meuhub-text">Meu Perfil</h2>
           </div>
 
         {/* Foto de Perfil */}
@@ -474,7 +489,7 @@ const AdminPage = () => {
                   </p>
                   <button
                     onClick={handleImageUpload}
-                    className="w-full sm:w-auto bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mt-2 transition text-sm sm:text-base"
+                    className="w-full sm:w-auto bg-meuhub-primary text-white px-4 py-2 rounded-lg hover:bg-meuhub-accent transition text-sm sm:text-base"
                   >
                     Salvar Imagem
                   </button>
@@ -486,8 +501,8 @@ const AdminPage = () => {
 
         {/* Personalização do Perfil Público */}
         <div className="border-t pt-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-            <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <h3 className="text-xl font-semibold text-meuhub-text mb-6 flex items-center gap-2">
+            <svg className="w-6 h-6 text-meuhub-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
             </svg>
             Personalização do Perfil Público
@@ -495,15 +510,15 @@ const AdminPage = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Imagem de Background */}
-            <div className="bg-gray-50 p-5 rounded-xl">
-              <h4 className="text-base font-medium mb-4 text-gray-700">Imagem de Fundo</h4>
+            <div className="bg-meuhub-cream/50 p-5 rounded-xl">
+              <h4 className="text-base font-medium mb-4 text-meuhub-text">Imagem de Fundo</h4>
               <div className="space-y-4">
                 <div
                   className="w-full h-40 rounded-lg border-2 border-gray-300 bg-cover bg-center shadow-md"
                   style={{
                     backgroundImage: user?.background_image_url
-                      ? `url(${user.background_image_url})`
-                      : 'linear-gradient(to right, #6366f1, #8b5cf6)'
+                    ? `url(${user.background_image_url})`
+                    : 'linear-gradient(to right, #E8A87C, #E27D60)'
                   }}
                 />
                 <div>
@@ -516,18 +531,18 @@ const AdminPage = () => {
                   />
                   <button
                     onClick={() => backgroundFileInputRef.current?.click()}
-                    className="w-full bg-white border-2 border-gray-300 px-4 py-2.5 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700"
+                    className="w-full bg-white border-2 border-meuhub-secondary/30 px-4 py-2.5 rounded-lg hover:bg-meuhub-cream transition font-medium text-meuhub-text"
                   >
                     {user?.background_image_url ? 'Trocar Imagem de Fundo' : 'Adicionar Imagem de Fundo'}
                   </button>
                   {selectedBackgroundFile && (
-                    <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-gray-700 mb-2 truncate">
-                        📎 {selectedBackgroundFile.name}
+                    <div className="mt-3 p-3 bg-meuhub-primary/10 rounded-lg">
+                      <p className="text-sm text-meuhub-text mb-2 truncate">
+                        {selectedBackgroundFile.name}
                       </p>
                       <button
                         onClick={handleBackgroundImageUpload}
-                        className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium shadow-md"
+                        className="w-full bg-meuhub-primary text-white px-4 py-2.5 rounded-lg hover:bg-meuhub-accent transition font-medium shadow-md"
                       >
                         Salvar Imagem
                       </button>
@@ -538,8 +553,8 @@ const AdminPage = () => {
             </div>
 
             {/* Cor de Destaque Global */}
-            <div className="bg-gray-50 p-5 rounded-xl">
-              <h4 className="text-base font-medium mb-4 text-gray-700">Cor de Destaque</h4>
+            <div className="bg-meuhub-cream/50 p-5 rounded-xl">
+              <h4 className="text-base font-medium mb-4 text-meuhub-text">Cor de Destaque</h4>
               <div className="space-y-4">
                 {/* Preview da cor */}
                 <div
@@ -548,7 +563,7 @@ const AdminPage = () => {
                 >
                   <div className="text-center">
                     <div className="bg-white/90 backdrop-blur-sm px-6 py-3 rounded-lg shadow-lg">
-                      <p className="text-sm font-medium text-gray-700 mb-1">Cor Atual</p>
+                      <p className="text-sm font-medium text-meuhub-text mb-1">Cor Atual</p>
                       <p className="text-xl font-bold font-mono" style={{ color: accentColor }}>
                         {accentColor.toUpperCase()}
                       </p>
@@ -561,23 +576,23 @@ const AdminPage = () => {
                       type="color"
                       value={accentColor}
                       onChange={(e) => setAccentColor(e.target.value)}
-                      className="h-12 w-20 border-2 border-gray-300 rounded-lg cursor-pointer"
+                      className="h-12 w-20 border-2 border-meuhub-secondary/30 rounded-lg cursor-pointer"
                     />
                     <input
                       type="text"
                       value={accentColor}
                       onChange={(e) => setAccentColor(e.target.value)}
-                      className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg font-mono text-sm focus:border-blue-500 focus:outline-none"
-                      placeholder="#6366f1"
+                      className="flex-1 px-4 py-2.5 border-2 border-meuhub-secondary/30 rounded-lg font-mono text-sm focus:border-meuhub-primary focus:outline-none"
+                      placeholder="#E8A87C"
                     />
                   </div>
                   <button
                     onClick={handleAccentColorUpdate}
-                    className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium shadow-md"
+                    className="w-full bg-meuhub-primary text-white px-4 py-2.5 rounded-lg hover:bg-meuhub-accent transition font-medium shadow-md"
                   >
                     Salvar Cor
                   </button>
-                  <p className="text-xs text-gray-600 text-center">
+                  <p className="text-xs text-meuhub-text/60 text-center">
                     Esta cor será aplicada a todos os links
                   </p>
                 </div>
@@ -590,50 +605,50 @@ const AdminPage = () => {
 
         {/* Conteúdo da Aba Configurações */}
         {activeTab === 'configuracoes' && (
-        <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg mb-8">
+        <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg mb-8 border border-meuhub-secondary/20">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-meuhub-secondary to-meuhub-accent flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Configurações da Conta</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-meuhub-text">Configurações da Conta</h2>
           </div>
 
           <div className="space-y-6">
             {/* Dados Pessoais */}
-            <div className="border-b pb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Dados Pessoais</h3>
+            <div className="border-b border-meuhub-secondary/20 pb-6">
+              <h3 className="text-lg font-semibold text-meuhub-text mb-4">Dados Pessoais</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-meuhub-text mb-2">
                     Nome de Exibição
                   </label>
                   <input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                    className="w-full px-4 py-2.5 border-2 border-meuhub-secondary/30 rounded-lg focus:border-meuhub-primary focus:outline-none"
                     placeholder="Seu nome"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-meuhub-text mb-2">
                     Nome de Usuário
                   </label>
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                    className="w-full px-4 py-2.5 border-2 border-meuhub-secondary/30 rounded-lg focus:border-meuhub-primary focus:outline-none"
                     placeholder="@usuario"
                   />
                 </div>
               </div>
               <button
                 onClick={handleUpdateProfile}
-                className="mt-4 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium shadow-md"
+                className="mt-4 bg-meuhub-primary text-meuhub-text px-6 py-2.5 rounded-lg hover:bg-meuhub-accent transition font-medium shadow-md"
               >
                 Salvar Alterações
               </button>
@@ -641,52 +656,106 @@ const AdminPage = () => {
 
             {/* Alterar Senha */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Alterar Senha</h3>
+              <h3 className="text-lg font-semibold text-meuhub-text mb-4">Alterar Senha</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-meuhub-text mb-2">
                     Senha Atual
                   </label>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                    placeholder="••••••"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full px-4 py-2.5 pr-12 border-2 border-meuhub-secondary/30 rounded-lg focus:border-meuhub-primary focus:outline-none"
+                      placeholder="••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-meuhub-text/60 hover:text-meuhub-text"
+                    >
+                      {showCurrentPassword ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-meuhub-text mb-2">
                     Nova Senha
                   </label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                    placeholder="••••••"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-4 py-2.5 pr-12 border-2 border-meuhub-secondary/30 rounded-lg focus:border-meuhub-primary focus:outline-none"
+                      placeholder="••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-meuhub-text/60 hover:text-meuhub-text"
+                    >
+                      {showNewPassword ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-meuhub-text mb-2">
                     Confirmar Senha
                   </label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                    placeholder="••••••"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-4 py-2.5 pr-12 border-2 border-meuhub-secondary/30 rounded-lg focus:border-meuhub-primary focus:outline-none"
+                      placeholder="••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-meuhub-text/60 hover:text-meuhub-text"
+                    >
+                      {showConfirmPassword ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
               <button
                 onClick={handleUpdatePassword}
-                className="mt-4 bg-orange-600 text-white px-6 py-2.5 rounded-lg hover:bg-orange-700 transition font-medium shadow-md"
+                className="mt-4 bg-meuhub-accent text-meuhub-text px-6 py-2.5 rounded-lg hover:bg-meuhub-primary transition font-medium shadow-md"
               >
                 Alterar Senha
               </button>
-              <p className="text-xs text-gray-600 mt-2">
+              <p className="text-xs text-meuhub-text/60 mt-2">
                 A senha deve ter pelo menos 6 caracteres
               </p>
             </div>
@@ -696,22 +765,22 @@ const AdminPage = () => {
 
         {/* Conteúdo da Aba Links */}
         {activeTab === 'links' && (
-        <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
+        <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-meuhub-secondary/20">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-meuhub-accent to-meuhub-primary flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Meus Links</h2>
-                <p className="text-sm text-gray-600">{links.length} {links.length === 1 ? 'link' : 'links'} cadastrados</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-meuhub-text">Meus Links</h2>
+                <p className="text-sm text-meuhub-text/60">{links.length} {links.length === 1 ? 'link' : 'links'} cadastrados</p>
               </div>
             </div>
             <button
               onClick={handleOpenModalForCreate}
-              className="w-full sm:w-auto inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg shadow-green-500/30 font-medium"
+              className="w-full sm:w-auto inline-flex items-center gap-2 bg-gradient-to-r from-meuhub-primary to-meuhub-accent text-meuhub-text px-6 py-3 rounded-xl hover:from-meuhub-accent hover:to-meuhub-primary transition-all shadow-lg shadow-meuhub-primary/30 font-medium"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -738,7 +807,7 @@ const AdminPage = () => {
               </div>
             ))
           ) : (
-            <p className="text-center text-gray-500 py-4">Você ainda não adicionou nenhum link.</p>
+            <p className="text-center text-meuhub-text/60 py-4">Você ainda não adicionou nenhum link.</p>
           )}
         </div>
         </section>
@@ -746,14 +815,14 @@ const AdminPage = () => {
 
         {/* Conteúdo da Aba Códigos de Convite */}
         {activeTab === 'codigos' && (
-          <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
+          <section className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-meuhub-secondary/20">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-meuhub-primary to-meuhub-accent flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Códigos de Convite</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-meuhub-text">Códigos de Convite</h2>
             </div>
             <InviteCodesPanel />
           </section>

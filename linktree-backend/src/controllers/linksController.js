@@ -1,6 +1,7 @@
 const pool = require('../db/pool');
 const { validationResult } = require('express-validator');
 const logger = require('../utils/logger');
+const { formatPhone, extractYouTubeId } = require('../utils/linkUrlBuilder');
 
 exports.createLink = async (req, res) => {
     const errors = validationResult(req);
@@ -8,16 +9,25 @@ exports.createLink = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, url, color_hash, cover_image_url } = req.body;
+    const { title, url, color_hash, cover_image_url, link_type, metadata } = req.body;
     const userId = req.user.id;
 
     try {
         const orderResult = await pool.query("SELECT COUNT(*) FROM links WHERE user_id = $1", [userId]);
         const display_order = parseInt(orderResult.rows[0].count, 10);
 
+        // Para tipo youtube, extrair o ID do video da URL
+        let finalMetadata = metadata || {};
+        if (link_type === 'youtube' && url) {
+            const videoId = extractYouTubeId(url);
+            if (videoId) {
+                finalMetadata = { ...finalMetadata, videoId };
+            }
+        }
+
         const newLink = await pool.query(
-            "INSERT INTO links (user_id, title, url, display_order, color_hash, cover_image_url) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-            [userId, title, url, display_order, color_hash, cover_image_url]
+            "INSERT INTO links (user_id, title, url, display_order, color_hash, cover_image_url, link_type, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+            [userId, title, url, display_order, color_hash, cover_image_url, link_type || 'default', finalMetadata]
         );
 
         res.status(201).json(newLink.rows[0]);
@@ -48,7 +58,7 @@ exports.getLinks = async (req, res) => {
 };
 
 exports.updateLink = async (req, res) => {
-    const { title, url, color_hash, cover_image_url, display_order } = req.body;
+    const { title, url, color_hash, cover_image_url, display_order, link_type, metadata } = req.body;
     const linkId = req.params.id;
     const userId = req.user.id;
 
@@ -64,10 +74,20 @@ exports.updateLink = async (req, res) => {
         const newColorHash = color_hash !== undefined ? color_hash : currentLink.color_hash;
         const newCoverImageUrl = cover_image_url !== undefined ? cover_image_url : currentLink.cover_image_url;
         const newDisplayOrder = display_order !== undefined ? display_order : currentLink.display_order;
+        const newLinkType = link_type !== undefined ? link_type : currentLink.link_type;
+        
+        // Para tipo youtube, extrair o ID do video da URL
+        let newMetadata = metadata !== undefined ? metadata : currentLink.metadata;
+        if (newLinkType === 'youtube' && newUrl) {
+            const videoId = extractYouTubeId(newUrl);
+            if (videoId) {
+                newMetadata = { ...newMetadata, videoId };
+            }
+        }
 
         const updatedLink = await pool.query(
-            "UPDATE links SET title = $1, url = $2, color_hash = $3, cover_image_url = $4, display_order = $5 WHERE id = $6 RETURNING *",
-            [newTitle, newUrl, newColorHash, newCoverImageUrl, newDisplayOrder, linkId]
+            "UPDATE links SET title = $1, url = $2, color_hash = $3, cover_image_url = $4, display_order = $5, link_type = $6, metadata = $7 WHERE id = $8 RETURNING *",
+            [newTitle, newUrl, newColorHash, newCoverImageUrl, newDisplayOrder, newLinkType, newMetadata, linkId]
         );
 
         res.json(updatedLink.rows[0]);

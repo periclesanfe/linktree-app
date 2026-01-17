@@ -1,7 +1,37 @@
 // src/pages/ProfilePage.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import apiClient from '../api/apiClient';
+import { LINK_TYPE_ICONS } from '../components/icons/SocialIcons';
+
+// Detecta se estamos em um WebView in-app (Instagram, TikTok, Facebook, etc.)
+const isInAppWebView = (): boolean => {
+  const ua = navigator.userAgent || navigator.vendor || '';
+  
+  // Detecta WebViews específicos de apps sociais
+  const inAppPatterns = [
+    /FBAN|FBAV/i,        // Facebook App
+    /Instagram/i,         // Instagram
+    /Twitter/i,           // Twitter/X
+    /Line\//i,            // Line
+    /KAKAOTALK/i,         // KakaoTalk
+    /Snapchat/i,          // Snapchat
+    /TikTok/i,            // TikTok
+    /musical_ly/i,        // TikTok (antigo)
+    /BytedanceWebview/i,  // TikTok WebView
+    /LinkedIn/i,          // LinkedIn
+    /Pinterest/i,         // Pinterest
+    /Telegram/i,          // Telegram
+    /WhatsApp/i,          // WhatsApp (geralmente abre no Safari, mas verificamos)
+  ];
+  
+  return inAppPatterns.some(pattern => pattern.test(ua));
+};
+
+// Detecta iOS (iPhone, iPad, iPod)
+const isIOS = (): boolean => {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
+};
 
 // Tipagens para os dados que esperamos da API
 interface Link {
@@ -12,6 +42,8 @@ interface Link {
   color_hash?: string | null;
   background_color?: string | null;
   border_color?: string | null;
+  link_type?: string;
+  metadata?: Record<string, string>;
 }
 
 interface SocialIcon {
@@ -62,10 +94,33 @@ const ProfilePage = () => {
     fetchProfile();
   }, [username]);
 
+  // Monta a URL base do backend para redirecionamento
+  const getRedirectUrl = (linkId: string): string => {
+    // Em produção, usa URL relativa que o Nginx roteia para o backend
+    // Em desenvolvimento, usa a URL do backend diretamente
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+    return `${backendUrl}/r/${linkId}`;
+  };
+
+  // Handler de clique otimizado para iOS WebViews
+  // IMPORTANT: Must be declared before early returns to follow React Hook rules
+  const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, linkId: string) => {
+    const redirectUrl = getRedirectUrl(linkId);
+    
+    // Em WebViews in-app ou iOS, target="_blank" frequentemente falha
+    // Usamos window.location.href para garantir o redirecionamento
+    if (isInAppWebView() || isIOS()) {
+      e.preventDefault();
+      window.location.href = redirectUrl;
+      return;
+    }
+    
+    // Em navegadores desktop/normais, deixamos o comportamento padrão do <a>
+    // O href já está configurado, então o clique funciona naturalmente
+  }, []);
+
   if (loading) return <div className="text-center text-white p-10">Carregando perfil...</div>;
   if (error) return <div className="text-center text-red-500 p-10">{error}</div>;
-
-  const backendBaseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
   const backgroundStyle = profile?.background_image_url
     ? `url(${profile.background_image_url})`
@@ -107,13 +162,13 @@ const ProfilePage = () => {
           {profile?.links.map(link => (
             <a
               key={link.id}
-              href={`${backendBaseUrl}/r/${link.id}`}
-              target="_blank"
+              href={getRedirectUrl(link.id)}
+              onClick={(e) => handleLinkClick(e, link.id)}
               rel="noopener noreferrer"
               className="block relative pt-12 sm:pt-14"
             >
               {/* Imagem flutuando (metade fora, metade dentro) */}
-              {link.cover_image_url && (
+              {link.cover_image_url ? (
                 <div className="absolute left-1/2 -translate-x-1/2 -top-6 sm:-top-8 z-10">
                   <div
                     className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 shadow-xl bg-cover bg-center"
@@ -122,6 +177,16 @@ const ProfilePage = () => {
                       borderColor: profile.accent_color || '#6366f1'
                     }}
                   />
+                </div>
+              ) : (
+                <div className="absolute left-1/2 -translate-x-1/2 -top-6 sm:-top-8 z-10">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center bg-white shadow-xl border-4"
+                       style={{ borderColor: profile.accent_color || '#6366f1' }}>
+                    {(() => {
+                      const IconComponent = LINK_TYPE_ICONS[link.link_type as keyof typeof LINK_TYPE_ICONS] || LINK_TYPE_ICONS['website'];
+                      return IconComponent ? <IconComponent size={40} className="text-gray-600" /> : null;
+                    })()}
+                  </div>
                 </div>
               )}
 

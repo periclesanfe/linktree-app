@@ -18,7 +18,7 @@ exports.getPublicProfile = async (req, res) => {
         const userId = userProfile.id;
 
         const [linksResult, socialIconsResult] = await Promise.all([
-            pool.query("SELECT id, title, url, cover_image_url, color_hash FROM links WHERE user_id = $1 ORDER BY display_order ASC", [userId]),
+            pool.query("SELECT id, title, url, cover_image_url, color_hash, link_type, metadata FROM links WHERE user_id = $1 AND active = true ORDER BY display_order ASC", [userId]),
             pool.query("SELECT id, platform, url FROM social_icons WHERE user_id = $1", [userId])
         ]);
 

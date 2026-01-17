@@ -1,11 +1,27 @@
 // src/components/LinkModal.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import apiClient from '../api/apiClient';
+import LinkTypeSelector from './LinkTypeSelector';
+import type { LinkType } from './LinkTypeSelector';
+
+interface LinkMetadata {
+  phone?: string;
+  message?: string;
+  contact_name?: string;
+  username?: string;
+  email?: string;
+  subject?: string;
+  body?: string;
+  video_id?: string;
+  channel_id?: string;
+}
 
 interface Link {
   id: string;
   title: string;
   url: string;
+  link_type?: string;
+  metadata?: LinkMetadata;
   cover_image_url?: string | null;
   color_hash?: string;
   background_color?: string;
@@ -19,24 +35,37 @@ interface LinkModalProps {
   existingLink: Link | null;
 }
 
+// Utility function for phone mask (Brazilian format)
+const formatPhone = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+};
+
 const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existingLink }) => {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
+  const [linkType, setLinkType] = useState<LinkType>('website');
+  const [metadata, setMetadata] = useState<LinkMetadata>({});
   const [error, setError] = useState('');
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Se estamos editando um link, preenche o formulário com os dados existentes
     if (existingLink) {
       setTitle(existingLink.title);
       setUrl(existingLink.url);
+      setLinkType((existingLink.link_type as LinkType) || 'website');
+      setMetadata(existingLink.metadata || {});
       setCoverImagePreview(existingLink.cover_image_url || null);
     } else {
-      // Se estamos criando, limpa o formulário
       setTitle('');
       setUrl('');
+      setLinkType('website');
+      setMetadata({});
       setCoverImage(null);
       setCoverImagePreview(null);
     }
@@ -50,25 +79,67 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
     }
   };
 
+  const handleMetadataChange = (field: keyof LinkMetadata, value: string) => {
+    setMetadata((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handlePhoneChange = (field: 'phone', value: string) => {
+    const formatted = formatPhone(value);
+    setMetadata((prev) => ({ ...prev, [field]: formatted }));
+  };
+
+  const handleLinkTypeChange = (type: LinkType) => {
+    setLinkType(type);
+    // Reset metadata when changing type
+    setMetadata({});
+    setUrl('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     try {
       let response;
-      const linkData = { title, url };
+      
+      // Build the final URL based on link type
+      let finalUrl = url;
+      if (linkType === 'whatsapp' && metadata.phone) {
+        const phoneDigits = metadata.phone.replace(/\D/g, '');
+        const message = metadata.message ? encodeURIComponent(metadata.message) : '';
+        finalUrl = `https://wa.me/55${phoneDigits}${message ? `?text=${message}` : ''}`;
+      } else if (linkType === 'instagram' && metadata.username) {
+        const username = metadata.username.replace('@', '');
+        finalUrl = `https://instagram.com/${username}`;
+      } else if (linkType === 'email' && metadata.email) {
+        const params = new URLSearchParams();
+        if (metadata.subject) params.append('subject', metadata.subject);
+        if (metadata.body) params.append('body', metadata.body);
+        finalUrl = `mailto:${metadata.email}${params.toString() ? `?${params.toString()}` : ''}`;
+      } else if (linkType === 'phone' && metadata.phone) {
+        const phoneDigits = metadata.phone.replace(/\D/g, '');
+        finalUrl = `tel:+55${phoneDigits}`;
+      } else if (linkType === 'tiktok' && metadata.username) {
+        const username = metadata.username.replace('@', '');
+        finalUrl = `https://tiktok.com/@${username}`;
+      }
+      // youtube and website use the url field directly
+
+      const linkData = {
+        title,
+        url: finalUrl,
+        link_type: linkType,
+        metadata,
+      };
 
       if (existingLink) {
-        // Modo de Edição (UPDATE)
         response = await apiClient.put(`/links/${existingLink.id}`, linkData);
       } else {
-        // Modo de Criação (CREATE)
         response = await apiClient.post('/links', linkData);
       }
 
       const savedLink = response.data;
 
-      // Se tem imagem de capa, faz upload
       if (coverImage) {
         const formData = new FormData();
         formData.append('coverImage', coverImage);
@@ -82,6 +153,194 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
     } catch (err) {
       setError('Ocorreu um erro ao salvar o link. Verifique os dados.');
       console.error(err);
+    }
+  };
+
+  const renderDynamicFields = () => {
+    const inputClasses = "w-full px-4 py-3 border-2 border-[#E5DDD8] rounded-lg focus:outline-none focus:border-[#E8A87C] transition-colors";
+    const labelClasses = "block text-gray-700 font-medium mb-2";
+
+    switch (linkType) {
+      case 'website':
+        return (
+          <div>
+            <label htmlFor="url" className={labelClasses}>
+              URL de Destino
+            </label>
+            <input
+              type="url"
+              id="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className={inputClasses}
+              placeholder="https://exemplo.com"
+              required
+            />
+          </div>
+        );
+
+      case 'whatsapp':
+        return (
+          <>
+            <div>
+              <label htmlFor="phone" className={labelClasses}>
+                Telefone (WhatsApp)
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                value={metadata.phone || ''}
+                onChange={(e) => handlePhoneChange('phone', e.target.value)}
+                className={inputClasses}
+                placeholder="(11) 99999-9999"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="message" className={labelClasses}>
+                Mensagem padrao (opcional)
+              </label>
+              <textarea
+                id="message"
+                value={metadata.message || ''}
+                onChange={(e) => handleMetadataChange('message', e.target.value)}
+                className={`${inputClasses} resize-none`}
+                placeholder="Ola! Gostaria de saber mais..."
+                rows={3}
+              />
+            </div>
+          </>
+        );
+
+      case 'instagram':
+        return (
+          <div>
+            <label htmlFor="username" className={labelClasses}>
+              Usuario do Instagram
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">@</span>
+              <input
+                type="text"
+                id="username"
+                value={(metadata.username || '').replace('@', '')}
+                onChange={(e) => handleMetadataChange('username', e.target.value)}
+                className={`${inputClasses} pl-8`}
+                placeholder="seu_usuario"
+                required
+              />
+            </div>
+          </div>
+        );
+
+      case 'email':
+        return (
+          <>
+            <div>
+              <label htmlFor="email" className={labelClasses}>
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={metadata.email || ''}
+                onChange={(e) => handleMetadataChange('email', e.target.value)}
+                className={inputClasses}
+                placeholder="contato@exemplo.com"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="subject" className={labelClasses}>
+                Assunto (opcional)
+              </label>
+              <input
+                type="text"
+                id="subject"
+                value={metadata.subject || ''}
+                onChange={(e) => handleMetadataChange('subject', e.target.value)}
+                className={inputClasses}
+                placeholder="Assunto do email"
+              />
+            </div>
+            <div>
+              <label htmlFor="body" className={labelClasses}>
+                Corpo da mensagem (opcional)
+              </label>
+              <textarea
+                id="body"
+                value={metadata.body || ''}
+                onChange={(e) => handleMetadataChange('body', e.target.value)}
+                className={`${inputClasses} resize-none`}
+                placeholder="Mensagem pre-definida..."
+                rows={3}
+              />
+            </div>
+          </>
+        );
+
+      case 'phone':
+        return (
+          <div>
+            <label htmlFor="phone" className={labelClasses}>
+              Numero de Telefone
+            </label>
+            <input
+              type="tel"
+              id="phone"
+              value={metadata.phone || ''}
+              onChange={(e) => handlePhoneChange('phone', e.target.value)}
+              className={inputClasses}
+              placeholder="(11) 99999-9999"
+              required
+            />
+          </div>
+        );
+
+      case 'youtube':
+        return (
+          <div>
+            <label htmlFor="url" className={labelClasses}>
+              URL do Video ou Canal
+            </label>
+            <input
+              type="url"
+              id="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className={inputClasses}
+              placeholder="https://youtube.com/watch?v=..."
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Cole a URL completa do video ou canal
+            </p>
+          </div>
+        );
+
+      case 'tiktok':
+        return (
+          <div>
+            <label htmlFor="username" className={labelClasses}>
+              Usuario do TikTok
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">@</span>
+              <input
+                type="text"
+                id="username"
+                value={(metadata.username || '').replace('@', '')}
+                onChange={(e) => handleMetadataChange('username', e.target.value)}
+                className={`${inputClasses} pl-8`}
+                placeholder="seu_usuario"
+                required
+              />
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
     }
   };
 
@@ -120,12 +379,18 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
               </div>
             )}
 
+            {/* Link Type Selector */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-3">Tipo de Link</label>
+              <LinkTypeSelector selected={linkType} onChange={handleLinkTypeChange} />
+            </div>
+
             {/* Imagem de Capa */}
             <div>
               <label className="block text-gray-700 font-medium mb-3">Imagem de Capa</label>
               <div className="flex flex-col items-center gap-4">
                 {coverImagePreview && (
-                  <div className="w-full aspect-square max-w-[200px] rounded-2xl overflow-hidden border-4 border-gray-200 shadow-lg">
+                  <div className="w-full aspect-square max-w-[200px] rounded-2xl overflow-hidden border-4 border-[#E5DDD8] shadow-lg">
                     <img
                       src={coverImagePreview}
                       alt="Preview"
@@ -150,39 +415,26 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
               </div>
             </div>
 
-            {/* Título */}
+            {/* Titulo */}
             <div>
               <label htmlFor="title" className="block text-gray-700 font-medium mb-2">
-                Título
+                Titulo
               </label>
               <input
                 type="text"
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 border-2 border-[#E5DDD8] rounded-lg focus:outline-none focus:border-[#E8A87C] transition-colors"
                 placeholder="Ex: Meu Portfolio"
                 required
               />
             </div>
 
-            {/* URL */}
-            <div>
-              <label htmlFor="url" className="block text-gray-700 font-medium mb-2">
-                URL de Destino
-              </label>
-              <input
-                type="url"
-                id="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                placeholder="https://exemplo.com"
-                required
-              />
-            </div>
+            {/* Dynamic Fields based on link type */}
+            {renderDynamicFields()}
 
-            {/* Botões */}
+            {/* Botoes */}
             <div className="flex gap-3 pt-4">
               <button
                 type="button"
@@ -193,7 +445,7 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium shadow-lg shadow-blue-500/30"
+                className="flex-1 px-4 py-3 bg-[#E8A87C] hover:bg-[#d4956b] text-white rounded-lg transition-colors font-medium shadow-lg shadow-[#E8A87C]/30"
               >
                 Salvar Link
               </button>

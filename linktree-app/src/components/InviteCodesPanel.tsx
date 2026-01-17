@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '../api/apiClient';
 import { useToast } from '../context/ToastContext';
 import SkeletonLoader from './SkeletonLoader';
@@ -35,23 +35,24 @@ const InviteCodesPanel: React.FC = () => {
 
   const { showToast } = useToast();
 
-  useEffect(() => {
-    fetchCodes();
-  }, [filter]);
-
-  const fetchCodes = async () => {
+  const fetchCodes = useCallback(async () => {
     try {
       setLoading(true);
       const params = filter !== 'all' ? { status: filter } : {};
       const response = await apiClient.get('/invite-codes', { params });
       setCodes(response.data.codes);
       setStats(response.data.stats);
-    } catch (error: any) {
-      showToast(error.response?.data?.error || 'Erro ao buscar códigos', 'error');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      showToast(err.response?.data?.error || 'Erro ao buscar códigos', 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, showToast]);
+
+  useEffect(() => {
+    fetchCodes();
+  }, [fetchCodes]);
 
   const handleGenerateCodes = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +64,7 @@ const InviteCodesPanel: React.FC = () => {
 
     try {
       setGenerating(true);
-      const payload: any = { count };
+      const payload: { count: number; expiresInDays?: number; notes?: string } = { count };
       if (expiresInDays) payload.expiresInDays = Number(expiresInDays);
       if (notes) payload.notes = notes;
 
@@ -78,8 +79,9 @@ const InviteCodesPanel: React.FC = () => {
 
       // Refresh codes list
       fetchCodes();
-    } catch (error: any) {
-      showToast(error.response?.data?.error || 'Erro ao gerar códigos', 'error');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      showToast(err.response?.data?.error || 'Erro ao gerar códigos', 'error');
     } finally {
       setGenerating(false);
     }
@@ -94,8 +96,9 @@ const InviteCodesPanel: React.FC = () => {
       await apiClient.delete(`/invite-codes/${id}`);
       showToast('Código deletado com sucesso!', 'success');
       fetchCodes();
-    } catch (error: any) {
-      showToast(error.response?.data?.error || 'Erro ao deletar código', 'error');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      showToast(err.response?.data?.error || 'Erro ao deletar código', 'error');
     }
   };
 
@@ -130,7 +133,7 @@ const InviteCodesPanel: React.FC = () => {
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <div className="text-sm text-gray-600">Usados</div>
-            <div className="text-2xl font-bold text-blue-600">{stats.used}</div>
+            <div className="text-2xl font-bold text-meuhub-primary">{stats.used}</div>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <div className="text-sm text-gray-600">Expirados</div>
@@ -154,7 +157,7 @@ const InviteCodesPanel: React.FC = () => {
                 max="100"
                 value={count}
                 onChange={(e) => setCount(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-meuhub-primary"
                 required
               />
             </div>
@@ -168,7 +171,7 @@ const InviteCodesPanel: React.FC = () => {
                 value={expiresInDays}
                 onChange={(e) => setExpiresInDays(e.target.value ? Number(e.target.value) : '')}
                 placeholder="Nunca expira"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-meuhub-primary"
               />
             </div>
             <div>
@@ -180,14 +183,14 @@ const InviteCodesPanel: React.FC = () => {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Ex: Convite VIP"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-meuhub-primary"
               />
             </div>
           </div>
           <button
             type="submit"
             disabled={generating}
-            className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full md:w-auto px-6 py-2 bg-meuhub-primary text-meuhub-text rounded-md hover:bg-meuhub-accent disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {generating ? 'Gerando...' : 'Gerar Códigos'}
           </button>
@@ -201,10 +204,10 @@ const InviteCodesPanel: React.FC = () => {
             {['all', 'available', 'used', 'expired'].map((status) => (
               <button
                 key={status}
-                onClick={() => setFilter(status as any)}
+                onClick={() => setFilter(status as 'all' | 'used' | 'available' | 'expired')}
                 className={`px-4 py-2 rounded-md font-medium transition-colors ${
                   filter === status
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-meuhub-primary text-meuhub-text'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -274,7 +277,7 @@ const InviteCodesPanel: React.FC = () => {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                           code.is_used
-                            ? 'bg-blue-100 text-blue-800'
+                            ? 'bg-meuhub-primary/20 text-meuhub-text'
                             : code.expires_at && new Date(code.expires_at) < new Date()
                             ? 'bg-red-100 text-red-800'
                             : 'bg-green-100 text-green-800'
