@@ -35,6 +35,10 @@ const RegisterPage = () => {
       newErrors.username = 'Nome de usuario e obrigatorio';
     } else if (username.length < 3) {
       newErrors.username = 'Minimo 3 caracteres';
+    } else if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+      newErrors.username = 'Use apenas letras, números, ponto, traço e sublinhado';
+    } else if (/\s/.test(username)) {
+      newErrors.username = 'Espaços não são permitidos';
     }
 
     // Email validation

@@ -20,6 +20,17 @@ exports.getMe = async (req, res) => {
 
 exports.updateMe = async (req, res) => {
     const { username, email, display_name, bio } = req.body;
+
+    // Validacao de username
+    if (username) {
+        if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+            return res.status(400).json({ msg: 'O usuario so pode conter letras, numeros, ponto, traco e sublinhado.' });
+        }
+        if (username.length > 30) {
+            return res.status(400).json({ msg: 'O usuario deve ter no maximo 30 caracteres.' });
+        }
+    }
+
     try {
         const result = await pool.query(
             `UPDATE users SET 

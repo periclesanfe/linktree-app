@@ -227,6 +227,24 @@ const AdminPage = () => {
 
   // --- FUNÇÕES PARA ATUALIZAR DADOS DA CONTA ---
   const handleUpdateProfile = async () => {
+    // Validacao de username
+    if (!username.trim()) {
+      toast.error('O nome de usuario e obrigatorio');
+      return;
+    }
+    if (username.length < 3) {
+      toast.error('O nome de usuario deve ter pelo menos 3 caracteres');
+      return;
+    }
+    if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+      toast.error('O usuario so pode conter letras, numeros, ponto, traco e sublinhado.');
+      return;
+    }
+    if (/\s/.test(username)) {
+        toast.error('O nome de usuario nao pode conter espacos.');
+        return;
+    }
+
     const toastId = toast.loading('Salvando alterações...');
 
     try {
