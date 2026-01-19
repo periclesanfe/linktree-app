@@ -9,6 +9,7 @@ import LinkCard from '../components/LinkCard';
 import ConfirmModal from '../components/ConfirmModal';
 import InviteCodesPanel from '../components/InviteCodesPanel';
 import ImageCropper from '../components/ImageCropper';
+import SocialIconsPanel from '../components/SocialIconsPanel';
 
 // Tipagens para nossos dados
 interface Link {
@@ -857,9 +858,22 @@ const AdminPage = () => {
               </div>
             ))
           ) : (
-            <p className="text-center text-meuhub-text/60 py-4">Você ainda não adicionou nenhum link.</p>
+            <div className="bg-meuhub-cream/20 border-2 border-dashed border-meuhub-secondary/20 rounded-xl p-8 text-center">
+              <p className="text-meuhub-text/60">Você ainda não adicionou nenhum link principal.</p>
+              <button 
+                onClick={handleOpenModalForCreate}
+                className="text-meuhub-primary font-medium hover:underline mt-2"
+              >
+                Criar seu primeiro link
+              </button>
+            </div>
           )}
         </div>
+
+        {/* Separador e Seção de Ícones Sociais */}
+        <div className="my-10 border-t border-meuhub-secondary/20"></div>
+        <SocialIconsPanel />
+
         </section>
         )}
 
