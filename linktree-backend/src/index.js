@@ -28,7 +28,17 @@ app.use(helmet({
 }));
 
 // Configuração de CORS
-const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173', 'http://localhost:8080'];
+const envOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
+const defaultOrigins = [
+  'http://localhost:5173', 
+  'http://localhost:8080', 
+  'https://meuhub.app.br', 
+  'https://www.meuhub.app.br',
+  'http://meuhub.app.br'
+];
+
+const corsOrigin = [...new Set([...envOrigins, ...defaultOrigins])];
+
 app.use(cors({
   origin: function(origin, callback) {
     // Permitir requisições sem origin (como curl, apps mobile)
