@@ -674,27 +674,36 @@ const AdminPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-meuhub-text mb-2">
-                    Nome de Exibição
+                    Nome no Perfil
                   </label>
                   <input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     className="w-full px-4 py-2.5 border-2 border-meuhub-secondary/30 rounded-lg focus:border-meuhub-primary focus:outline-none"
-                    placeholder="Seu nome"
+                    placeholder="Seu nome ou marca"
                   />
+                  <p className="text-xs text-meuhub-text/60 mt-1">
+                    Este é o nome que aparecerá no topo do seu Linktree.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-meuhub-text mb-2">
-                    Nome de Usuário
+                    Usuário (Link do Perfil)
                   </label>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase())}
-                    className="w-full px-4 py-2.5 border-2 border-meuhub-secondary/30 rounded-lg focus:border-meuhub-primary focus:outline-none"
-                    placeholder="@usuario"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                      className="w-full px-4 py-2.5 border-2 border-meuhub-secondary/30 rounded-lg focus:border-meuhub-primary focus:outline-none pl-8"
+                      placeholder="usuario"
+                    />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-meuhub-text/40">@</span>
+                  </div>
+                  <p className="text-xs text-meuhub-text/60 mt-1 font-mono">
+                    meuhub.app.br/{username || 'usuario'}
+                  </p>
                 </div>
               </div>
               <button
