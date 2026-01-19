@@ -18,12 +18,13 @@ exports.registerUser = async (req, res) => {
             return res.status(400).json({ msg: 'Código de convite é obrigatório' });
         }
 
-        const cleanCode = inviteCode.toUpperCase().replace(/\s/g, '');
+        // Remove espacos e hifens para validacao flexivel
+        const cleanCode = inviteCode.toUpperCase().replace(/[\s-]/g, '');
 
         // Verificar se o código existe e está válido
         const codeResult = await pool.query(
             `SELECT * FROM invite_codes
-             WHERE code = $1
+             WHERE replace(code, '-', '') = $1
              AND is_used = false
              AND (expires_at IS NULL OR expires_at > NOW())`,
             [cleanCode]
@@ -32,6 +33,9 @@ exports.registerUser = async (req, res) => {
         if (codeResult.rows.length === 0) {
             return res.status(400).json({ msg: 'Código de convite inválido, já utilizado ou expirado' });
         }
+
+        // Recuperar o código original com formatação correta do banco para marcar como usado
+        const originalCode = codeResult.rows[0].code;
 
         // Verificar se usuário ou email já existe
         const userExists = await pool.query("SELECT * FROM users WHERE email = $1 OR username = $2", [email, username]);
@@ -55,13 +59,13 @@ exports.registerUser = async (req, res) => {
                  used_by = $1,
                  used_at = NOW()
              WHERE code = $2`,
-            [newUser.rows[0].id, cleanCode]
+            [newUser.rows[0].id, originalCode]
         );
 
         logger.info('User registered successfully', {
             userId: newUser.rows[0].id,
             username: username,
-            inviteCode: cleanCode
+            inviteCode: originalCode
         });
 
         res.status(201).json({ msg: 'Usuário registrado com sucesso!', user: newUser.rows[0] });

@@ -4,7 +4,7 @@ const pool = require('../db/pool');
 const authMiddleware = require('../middleware/authMiddleware');
 const logger = require('../utils/logger');
 
-// POST /api/invite-codes/validate - Validar código (público)
+// POST /api/invite-codes/validate - Validar código (publico)
 router.post('/validate', async (req, res) => {
   try {
     const { code } = req.body;
@@ -16,12 +16,13 @@ router.post('/validate', async (req, res) => {
       });
     }
 
-    const cleanCode = code.toUpperCase().replace(/\s/g, '');
+    // Remove espacos e hifens para validacao flexivel
+    const cleanCode = code.toUpperCase().replace(/[\s-]/g, '');
 
-    // Buscar código no banco
+    // Buscar código no banco (ignorando hifens no banco tambem)
     const result = await pool.query(
       `SELECT * FROM invite_codes
-       WHERE code = $1
+       WHERE replace(code, '-', '') = $1
        AND is_used = false
        AND (expires_at IS NULL OR expires_at > NOW())`,
       [cleanCode]
@@ -58,6 +59,21 @@ router.post('/', authMiddleware, async (req, res) => {
     if (count < 1 || count > 100) {
       return res.status(400).json({
         error: 'Quantidade deve ser entre 1 e 100'
+      });
+    }
+
+    // Verificar quantos códigos nao usados o usuario ja tem
+    const userCodes = await pool.query(
+      "SELECT COUNT(*) FROM invite_codes WHERE created_by = $1 AND is_used = false AND (expires_at IS NULL OR expires_at > NOW())",
+      [userId]
+    );
+    
+    const activeCodesCount = parseInt(userCodes.rows[0].count);
+    
+    // Limite de 10 códigos ativos por usuário
+    if (activeCodesCount + count > 10) {
+      return res.status(400).json({
+        error: `Limite de códigos ativos atingido. Você tem ${activeCodesCount} códigos ativos e o limite é 10.`
       });
     }
 
