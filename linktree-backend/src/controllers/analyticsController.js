@@ -56,6 +56,7 @@ function detectOS(userAgent) {
 
 exports.recordClickAndRedirect = async (req, res) => {
     const { linkId } = req.params;
+    const trackerId = req.query.t; // Captura ID do tracker da query param
 
     try {
         const linkResult = await pool.query("SELECT url, link_type, metadata FROM links WHERE id = $1", [linkId]);
@@ -75,12 +76,18 @@ exports.recordClickAndRedirect = async (req, res) => {
         const browser = detectBrowser(userAgent);
         const os = detectOS(userAgent);
 
-        // Registra o clique com informações avançadas
+        // Valida trackerId se fornecido (deve ser UUID)
+        let validTrackerId = null;
+        if (trackerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trackerId)) {
+            validTrackerId = trackerId;
+        }
+
+        // Registra o clique com informações avançadas e trackerId
         pool.query(
             `INSERT INTO analytics_clicks
-             (link_id, ip_hash, ip_address, user_agent, referrer, device_type, browser, os)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [linkId, ipHash, clientIp, userAgent, referrer, deviceType, browser, os]
+             (link_id, ip_hash, ip_address, user_agent, referrer, device_type, browser, os, tracker_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [linkId, ipHash, clientIp, userAgent, referrer, deviceType, browser, os, validTrackerId]
         ).catch(err => logger.error('Failed to register click', {
             linkId,
             error: err.message

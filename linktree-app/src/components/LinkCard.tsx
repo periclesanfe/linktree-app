@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
 import AnalyticsModal from './AnalyticsModal';
+import LinkTrackersModal from './LinkTrackersModal';
 
 interface Link {
   id: string;
@@ -22,6 +23,7 @@ interface LinkCardProps {
 const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, onDelete }) => {
   const [clickCount, setClickCount] = useState<number | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showTrackers, setShowTrackers] = useState(false);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -66,25 +68,37 @@ const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, onDelete }) => {
               {link.url}
             </a>
 
-            {/* Analytics Badge - Clicável */}
-            <button
-              onClick={() => setShowAnalytics(true)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-lg transition-all duration-200 group/analytics border border-blue-100"
-            >
-              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <span className="text-sm font-semibold text-gray-700">
-                {clickCount !== null ? (
-                  <>{clickCount} {clickCount === 1 ? 'clique' : 'cliques'}</>
-                ) : (
-                  'Carregando...'
-                )}
-              </span>
-              <svg className="w-4 h-4 text-blue-500 group-hover/analytics:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+            <div className="flex gap-2 flex-wrap">
+              {/* Analytics Badge - Clicável */}
+              <button
+                onClick={() => setShowAnalytics(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-lg transition-all duration-200 group/analytics border border-blue-100"
+              >
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span className="text-sm font-semibold text-gray-700">
+                  {clickCount !== null ? (
+                    <>{clickCount} {clickCount === 1 ? 'clique' : 'cliques'}</>
+                  ) : (
+                    'Carregando...'
+                  )}
+                </span>
+              </button>
+
+              {/* Rastreamento Badge */}
+              <button
+                onClick={() => setShowTrackers(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg transition-all duration-200 border border-purple-100"
+              >
+                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                <span className="text-sm font-semibold text-purple-700">
+                  Sublinks
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Ações */}
@@ -109,6 +123,14 @@ const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, onDelete }) => {
       <AnalyticsModal
         isOpen={showAnalytics}
         onClose={() => setShowAnalytics(false)}
+        linkId={link.id}
+        linkTitle={link.title}
+      />
+
+      {/* Link Trackers Modal */}
+      <LinkTrackersModal
+        isOpen={showTrackers}
+        onClose={() => setShowTrackers(false)}
         linkId={link.id}
         linkTitle={link.title}
       />
