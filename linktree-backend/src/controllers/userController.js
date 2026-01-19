@@ -20,13 +20,16 @@ exports.getMe = async (req, res) => {
 
 exports.updateMe = async (req, res) => {
     const { username, email, display_name, bio } = req.body;
+    
+    // Forçar username lowercase se fornecido
+    const usernameLower = username ? username.toLowerCase() : undefined;
 
     // Validacao de username
-    if (username) {
-        if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
-            return res.status(400).json({ msg: 'O usuario so pode conter letras, numeros, ponto, traco e sublinhado.' });
+    if (usernameLower) {
+        if (!/^[a-z0-9._-]+$/.test(usernameLower)) {
+            return res.status(400).json({ msg: 'O usuario so pode conter letras minusculas, numeros, ponto, traco e sublinhado.' });
         }
-        if (username.length > 30) {
+        if (usernameLower.length > 30) {
             return res.status(400).json({ msg: 'O usuario deve ter no maximo 30 caracteres.' });
         }
     }
@@ -39,7 +42,7 @@ exports.updateMe = async (req, res) => {
                 display_name = COALESCE($3, display_name),
                 bio = COALESCE($4, bio)
             WHERE id = $5 RETURNING id, username, email, display_name, bio`,
-            [username, email, display_name, bio, req.user.id]
+            [usernameLower, email, display_name, bio, req.user.id]
         );
         res.json(result.rows[0]);
     } catch (err) {

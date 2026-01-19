@@ -216,7 +216,7 @@ const RegisterPage = () => {
                 type="text"
                 id="username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
                 placeholder="seu_usuario"
                 className={`
                   w-full px-4 py-3 

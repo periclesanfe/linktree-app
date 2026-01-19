@@ -691,7 +691,7 @@ const AdminPage = () => {
                   <input
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase())}
                     className="w-full px-4 py-2.5 border-2 border-meuhub-secondary/30 rounded-lg focus:border-meuhub-primary focus:outline-none"
                     placeholder="@usuario"
                   />

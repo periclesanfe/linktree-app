@@ -3,11 +3,12 @@ const logger = require('../utils/logger');
 
 exports.getPublicProfile = async (req, res) => {
     const { username } = req.params;
+    const usernameLower = username.toLowerCase();
 
     try {
         const userResult = await pool.query(
             "SELECT id, username, display_name, bio, profile_image_url, background_image_url, accent_color FROM users WHERE username = $1",
-            [username]
+            [usernameLower]
         );
 
         if (userResult.rows.length === 0) {

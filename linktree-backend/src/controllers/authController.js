@@ -11,6 +11,7 @@ exports.registerUser = async (req, res) => {
     }
 
     const { username, email, password, inviteCode } = req.body;
+    const usernameLower = username.toLowerCase(); // Forçar lowercase
 
     try {
         // Validar código de convite
@@ -38,7 +39,7 @@ exports.registerUser = async (req, res) => {
         const originalCode = codeResult.rows[0].code;
 
         // Verificar se usuário ou email já existe
-        const userExists = await pool.query("SELECT * FROM users WHERE email = $1 OR username = $2", [email, username]);
+        const userExists = await pool.query("SELECT * FROM users WHERE email = $1 OR username = $2", [email, usernameLower]);
         if (userExists.rows.length > 0) {
             return res.status(400).json({ msg: 'Usuário ou e-mail já cadastrado.' });
         }
@@ -49,7 +50,7 @@ exports.registerUser = async (req, res) => {
         // Criar usuário
         const newUser = await pool.query(
             "INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email",
-            [username, email, password_hash]
+            [usernameLower, email, password_hash]
         );
 
         // Marcar código de convite como usado
@@ -64,7 +65,7 @@ exports.registerUser = async (req, res) => {
 
         logger.info('User registered successfully', {
             userId: newUser.rows[0].id,
-            username: username,
+            username: usernameLower,
             inviteCode: originalCode
         });
 
