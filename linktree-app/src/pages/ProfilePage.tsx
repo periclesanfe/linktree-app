@@ -189,7 +189,7 @@ const ProfilePage = () => {
           <h1 
             className={`text-2xl sm:text-3xl font-bold ${hasCustomBackground ? 'text-white' : 'text-meuhub-text'}`}
           >
-            @{profile?.username}
+            {profile?.display_name || `@${profile?.username}`}
           </h1>
           {profile?.bio && (
             <p 
