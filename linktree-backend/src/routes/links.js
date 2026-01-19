@@ -15,7 +15,43 @@ const {
 const router = Router();
 router.use(express.json());
 
-const upload = multer({ storage: multer.memoryStorage() });
+// Configuracao do multer com limites para mobile
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 20 * 1024 * 1024, // 20MB max
+    },
+    fileFilter: (req, file, cb) => {
+        const allowedMimes = [
+            'image/jpeg',
+            'image/jpg', 
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/heic',
+            'image/heif',
+        ];
+        
+        if (allowedMimes.includes(file.mimetype.toLowerCase())) {
+            cb(null, true);
+        } else {
+            cb(new Error(`Formato nao suportado: ${file.mimetype}. Use JPG, PNG, GIF, WebP ou HEIC.`), false);
+        }
+    }
+});
+
+// Middleware para tratar erros do multer
+const handleMulterError = (err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ msg: 'Arquivo muito grande. Maximo 20MB.' });
+        }
+        return res.status(400).json({ msg: `Erro no upload: ${err.message}` });
+    } else if (err) {
+        return res.status(400).json({ msg: err.message });
+    }
+    next();
+};
 
 // Validacao customizada: URL obrigatoria apenas para tipo 'website'
 const urlValidation = body('url').custom((value, { req }) => {
@@ -73,6 +109,7 @@ router.post(
     '/:linkId/cover-image',
     authMiddleware,
     upload.single('coverImage'),
+    handleMulterError,
     uploadLinkCoverImage
 );
 

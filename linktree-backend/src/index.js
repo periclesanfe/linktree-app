@@ -17,6 +17,7 @@ const analyticsRoutes = require('./routes/analytics');
 const socialIconRoutes = require('./routes/socialIcons');
 const profileRoutes = require('./routes/profile');
 const inviteCodeRoutes = require('./routes/inviteCodes');
+const storageRoutes = require('./routes/storage');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,9 +32,9 @@ app.use(cors({
   credentials: true 
 }));
 
-// Body parsing
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsing with increased limit for image uploads
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // HTTP logging
 app.use(httpLogger);
@@ -76,6 +77,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/socials', socialIconRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/invite-codes', inviteCodeRoutes);
+app.use('/api/storage', storageRoutes);
 
 // 404 Handler
 app.use((req, res) => {

@@ -1,6 +1,7 @@
 const pool = require('../db/pool');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
+const { handleImageUpload, deleteFromR2 } = require('../services/imageService');
 
 exports.getMe = async (req, res) => {
     try {
@@ -43,8 +44,25 @@ exports.updateMe = async (req, res) => {
 
 exports.deleteMe = async (req, res) => {
     try {
+        // Get user's current images to delete from R2
+        const userResult = await pool.query(
+            "SELECT profile_image_url, background_image_url FROM users WHERE id = $1",
+            [req.user.id]
+        );
+
+        if (userResult.rows.length > 0) {
+            const user = userResult.rows[0];
+            // Delete images from R2 if they exist
+            if (user.profile_image_url && !user.profile_image_url.startsWith('data:')) {
+                await deleteFromR2(user.profile_image_url);
+            }
+            if (user.background_image_url && !user.background_image_url.startsWith('data:')) {
+                await deleteFromR2(user.background_image_url);
+            }
+        }
+
         await pool.query("DELETE FROM users WHERE id = $1", [req.user.id]);
-        res.json({ msg: 'Usuário deletado com sucesso.' });
+        res.json({ msg: 'Usuario deletado com sucesso.' });
     } catch (err) {
         logger.error('User error - deleteMe', { 
             endpoint: 'deleteMe',
@@ -62,16 +80,31 @@ exports.uploadProfilePicture = async (req, res) => {
     }
 
     try {
-        const mimeType = req.file.mimetype;
-        const base64Data = req.file.buffer.toString('base64');
-        const dataUrl = `data:${mimeType};base64,${base64Data}`;
+        // Get current profile image URL to delete old one
+        const userResult = await pool.query(
+            "SELECT profile_image_url FROM users WHERE id = $1",
+            [req.user.id]
+        );
+        const oldUrl = userResult.rows[0]?.profile_image_url;
 
-        await pool.query(
-            "UPDATE users SET profile_image_url = $1 WHERE id = $2",
-            [dataUrl, req.user.id]
+        // Process and upload to R2
+        const result = await handleImageUpload(
+            req.file,
+            'avatar',
+            req.user.id.toString(),
+            oldUrl
         );
 
-        res.json({ msg: 'Imagem de perfil atualizada com sucesso!', url: dataUrl });
+        // Update database with new URL
+        await pool.query(
+            "UPDATE users SET profile_image_url = $1 WHERE id = $2",
+            [result.url, req.user.id]
+        );
+
+        res.json({ 
+            msg: 'Imagem de perfil atualizada com sucesso!', 
+            url: result.url 
+        });
 
     } catch (err) {
         logger.error('User error - uploadProfilePicture', {
@@ -80,7 +113,16 @@ exports.uploadProfilePicture = async (req, res) => {
             error: err.message,
             stack: err.stack
         });
-        res.status(500).send('Erro no servidor ao salvar a imagem.');
+        
+        // Check if it's a storage limit error
+        if (err.message.includes('Storage limit exceeded')) {
+            return res.status(507).json({ 
+                msg: err.message,
+                error: 'STORAGE_LIMIT_EXCEEDED'
+            });
+        }
+        
+        res.status(500).json({ msg: 'Erro no servidor ao salvar a imagem.' });
     }
 };
 
@@ -90,16 +132,31 @@ exports.uploadBackgroundImage = async (req, res) => {
     }
 
     try {
-        const mimeType = req.file.mimetype;
-        const base64Data = req.file.buffer.toString('base64');
-        const dataUrl = `data:${mimeType};base64,${base64Data}`;
+        // Get current background image URL to delete old one
+        const userResult = await pool.query(
+            "SELECT background_image_url FROM users WHERE id = $1",
+            [req.user.id]
+        );
+        const oldUrl = userResult.rows[0]?.background_image_url;
 
-        await pool.query(
-            "UPDATE users SET background_image_url = $1 WHERE id = $2",
-            [dataUrl, req.user.id]
+        // Process and upload to R2
+        const result = await handleImageUpload(
+            req.file,
+            'background',
+            req.user.id.toString(),
+            oldUrl
         );
 
-        res.json({ msg: 'Imagem de background atualizada com sucesso!', url: dataUrl });
+        // Update database with new URL
+        await pool.query(
+            "UPDATE users SET background_image_url = $1 WHERE id = $2",
+            [result.url, req.user.id]
+        );
+
+        res.json({ 
+            msg: 'Imagem de background atualizada com sucesso!', 
+            url: result.url 
+        });
 
     } catch (err) {
         logger.error('User error - uploadBackgroundImage', {
@@ -108,7 +165,16 @@ exports.uploadBackgroundImage = async (req, res) => {
             error: err.message,
             stack: err.stack
         });
-        res.status(500).send('Erro no servidor ao salvar a imagem de background.');
+        
+        // Check if it's a storage limit error
+        if (err.message.includes('Storage limit exceeded')) {
+            return res.status(507).json({ 
+                msg: err.message,
+                error: 'STORAGE_LIMIT_EXCEEDED'
+            });
+        }
+        
+        res.status(500).json({ msg: 'Erro no servidor ao salvar a imagem de background.' });
     }
 };
 
@@ -116,7 +182,7 @@ exports.updateAccentColor = async (req, res) => {
     const { accent_color } = req.body;
 
     if (!accent_color) {
-        return res.status(400).json({ msg: 'Cor de destaque não fornecida.' });
+        return res.status(400).json({ msg: 'Cor de destaque nao fornecida.' });
     }
 
     try {
@@ -157,7 +223,7 @@ exports.updatePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
-        return res.status(400).json({ msg: 'Senha atual e nova senha são obrigatórias.' });
+        return res.status(400).json({ msg: 'Senha atual e nova senha sao obrigatorias.' });
     }
 
     if (newPassword.length < 6) {
@@ -165,19 +231,19 @@ exports.updatePassword = async (req, res) => {
     }
 
     try {
-        // Busca a senha atual do usuário
+        // Busca a senha atual do usuario
         const userResult = await pool.query(
             "SELECT password_hash FROM users WHERE id = $1",
             [req.user.id]
         );
 
         if (userResult.rows.length === 0) {
-            return res.status(404).json({ msg: 'Usuário não encontrado.' });
+            return res.status(404).json({ msg: 'Usuario nao encontrado.' });
         }
 
         const user = userResult.rows[0];
 
-        // Verifica se a senha atual está correta
+        // Verifica se a senha atual esta correta
         const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
         if (!isMatch) {
             return res.status(400).json({ msg: 'Senha atual incorreta.' });

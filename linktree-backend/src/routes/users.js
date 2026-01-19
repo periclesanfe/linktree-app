@@ -5,11 +5,11 @@ const { getMe, updateMe, deleteMe, uploadProfilePicture, uploadBackgroundImage, 
 
 const router = Router();
 
-// Configuração do multer com limites para mobile
+// Configuracao do multer com limites para mobile
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB max (fotos de celular podem ser grandes)
+        fileSize: 20 * 1024 * 1024, // 20MB max
     },
     fileFilter: (req, file, cb) => {
         // Aceita formatos comuns de imagem (incluindo HEIC do iPhone)
@@ -26,7 +26,7 @@ const upload = multer({
         if (allowedMimes.includes(file.mimetype.toLowerCase())) {
             cb(null, true);
         } else {
-            cb(new Error(`Formato não suportado: ${file.mimetype}. Use JPG, PNG, GIF, WebP ou HEIC.`), false);
+            cb(new Error(`Formato nao suportado: ${file.mimetype}. Use JPG, PNG, GIF, WebP ou HEIC.`), false);
         }
     }
 });
@@ -39,7 +39,7 @@ router.delete('/me', authMiddleware, deleteMe);
 const handleMulterError = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ msg: 'Arquivo muito grande. Máximo 10MB.' });
+            return res.status(400).json({ msg: 'Arquivo muito grande. Maximo 20MB.' });
         }
         return res.status(400).json({ msg: `Erro no upload: ${err.message}` });
     } else if (err) {

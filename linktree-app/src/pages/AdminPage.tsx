@@ -8,6 +8,7 @@ import LinkModal from '../components/LinkModal';
 import LinkCard from '../components/LinkCard';
 import ConfirmModal from '../components/ConfirmModal';
 import InviteCodesPanel from '../components/InviteCodesPanel';
+import ImageCropper from '../components/ImageCropper';
 
 // Tipagens para nossos dados
 interface Link {
@@ -41,6 +42,10 @@ const AdminPage = () => {
   const [accentColor, setAccentColor] = useState<string>('#6366f1');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const backgroundFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Estados para o ImageCropper
+  const [profileCropperOpen, setProfileCropperOpen] = useState(false);
+  const [backgroundCropperOpen, setBackgroundCropperOpen] = useState(false);
 
   // Estados para modal de confirmação
   const [confirmModal, setConfirmModal] = useState({
@@ -91,7 +96,7 @@ const AdminPage = () => {
     fetchAllData();
   }, []);
 
-  // --- NOVAS FUNÇÕES PARA UPLOAD DE IMAGEM ---
+  // --- NOVAS FUNCOES PARA UPLOAD DE IMAGEM ---
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setSelectedFile(event.target.files[0]);
@@ -101,6 +106,60 @@ const AdminPage = () => {
   const handleBackgroundFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setSelectedBackgroundFile(event.target.files[0]);
+    }
+  };
+
+  // Handler para quando o crop da foto de perfil e confirmado
+  const handleProfileCropComplete = async (croppedBlob: Blob) => {
+    const formData = new FormData();
+    formData.append('profilePicture', croppedBlob, 'profile.jpg');
+
+    const toastId = toast.loading('Enviando foto de perfil...');
+
+    try {
+      const response = await apiClient.post('/users/me/profile-picture', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setUser(currentUser => currentUser ? { ...currentUser, profile_image_url: response.data.url } : null);
+      toast.success('Foto de perfil atualizada!', { id: toastId });
+    } catch (error: unknown) {
+      console.error('Erro ao fazer upload da imagem:', error);
+      const err = error as { response?: { data?: { msg?: string, error?: string } } };
+      if (err.response?.data?.error === 'STORAGE_LIMIT_EXCEEDED') {
+        toast.error('Limite de armazenamento atingido! Contate o suporte.', { id: toastId });
+      } else {
+        toast.error(err.response?.data?.msg || 'Nao foi possivel atualizar a foto.', { id: toastId });
+      }
+    }
+  };
+
+  // Handler para quando o crop do background e confirmado
+  const handleBackgroundCropComplete = async (croppedBlob: Blob) => {
+    const formData = new FormData();
+    formData.append('backgroundImage', croppedBlob, 'background.jpg');
+
+    const toastId = toast.loading('Enviando imagem de fundo...');
+
+    try {
+      const response = await apiClient.post('/users/me/background-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setUser(currentUser => currentUser ? { ...currentUser, background_image_url: response.data.url } : null);
+      toast.success('Imagem de fundo atualizada!', { id: toastId });
+    } catch (error: unknown) {
+      console.error('Erro ao fazer upload da imagem de background:', error);
+      const err = error as { response?: { data?: { msg?: string, error?: string } } };
+      if (err.response?.data?.error === 'STORAGE_LIMIT_EXCEEDED') {
+        toast.error('Limite de armazenamento atingido! Contate o suporte.', { id: toastId });
+      } else {
+        toast.error(err.response?.data?.msg || 'Nao foi possivel atualizar a imagem.', { id: toastId });
+      }
     }
   };
 
@@ -125,7 +184,7 @@ const AdminPage = () => {
       toast.success('Foto de perfil atualizada!', { id: toastId });
     } catch (error) {
       console.error('Erro ao fazer upload da imagem:', error);
-      toast.error('Não foi possível atualizar a foto.', { id: toastId });
+      toast.error('Nao foi possivel atualizar a foto.', { id: toastId });
     }
   };
 
@@ -149,7 +208,7 @@ const AdminPage = () => {
       toast.success('Imagem de fundo atualizada!', { id: toastId });
     } catch (error) {
       console.error('Erro ao fazer upload da imagem de background:', error);
-      toast.error('Não foi possível atualizar a imagem.', { id: toastId });
+      toast.error('Nao foi possivel atualizar a imagem.', { id: toastId });
     }
   };
 
@@ -477,24 +536,14 @@ const AdminPage = () => {
                 className="hidden"
               />
               <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full sm:w-auto bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm sm:text-base"
+                onClick={() => setProfileCropperOpen(true)}
+                className="w-full sm:w-auto bg-gradient-to-r from-meuhub-primary to-meuhub-accent text-meuhub-text px-4 py-2 rounded-lg hover:from-meuhub-accent hover:to-meuhub-primary transition-all font-medium shadow-md"
               >
                 Trocar Imagem
               </button>
-              {selectedFile && (
-                <div className="mt-2">
-                  <p className="text-xs sm:text-sm text-gray-600 break-all">
-                    Arquivo: {selectedFile.name}
-                  </p>
-                  <button
-                    onClick={handleImageUpload}
-                    className="w-full sm:w-auto bg-white text-gray-800 border-2 border-meuhub-primary px-4 py-2 rounded-lg hover:bg-meuhub-cream transition text-sm sm:text-base font-medium mt-2"
-                  >
-                    Salvar Imagem
-                  </button>
-                </div>
-              )}
+              <p className="text-xs text-meuhub-text/60 mt-2 text-center sm:text-left">
+                Imagem sera redimensionada para 400x400px
+              </p>
             </div>
           </div>
         </div>
@@ -522,32 +571,15 @@ const AdminPage = () => {
                   }}
                 />
                 <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={backgroundFileInputRef}
-                    onChange={handleBackgroundFileChange}
-                    className="hidden"
-                  />
                   <button
-                    onClick={() => backgroundFileInputRef.current?.click()}
-                    className="w-full bg-white border-2 border-meuhub-secondary/30 px-4 py-2.5 rounded-lg hover:bg-meuhub-cream transition font-medium text-meuhub-text"
+                    onClick={() => setBackgroundCropperOpen(true)}
+                    className="w-full bg-gradient-to-r from-meuhub-primary to-meuhub-accent text-meuhub-text px-4 py-2.5 rounded-lg hover:from-meuhub-accent hover:to-meuhub-primary transition-all font-medium shadow-md"
                   >
                     {user?.background_image_url ? 'Trocar Imagem de Fundo' : 'Adicionar Imagem de Fundo'}
                   </button>
-                  {selectedBackgroundFile && (
-                    <div className="mt-3 p-3 bg-meuhub-primary/10 rounded-lg">
-                      <p className="text-sm text-meuhub-text mb-2 truncate">
-                        {selectedBackgroundFile.name}
-                      </p>
-                      <button
-                        onClick={handleBackgroundImageUpload}
-                        className="w-full bg-white text-gray-800 border-2 border-meuhub-primary px-4 py-2.5 rounded-lg hover:bg-meuhub-cream transition font-medium"
-                      >
-                        Salvar Imagem
-                      </button>
-                    </div>
-                  )}
+                  <p className="text-xs text-meuhub-text/60 mt-2 text-center">
+                    Imagem sera redimensionada para 1280x720px
+                  </p>
                 </div>
               </div>
             </div>
@@ -829,6 +861,24 @@ const AdminPage = () => {
         )}
 
         <LinkModal isOpen={isModalOpen} onClose={handleCloseModal} onSave={handleSaveLink} existingLink={editingLink} />
+
+        {/* Image Croppers */}
+        <ImageCropper
+          isOpen={profileCropperOpen}
+          onClose={() => setProfileCropperOpen(false)}
+          onCropComplete={handleProfileCropComplete}
+          aspectRatio={1}
+          title="Recortar Foto de Perfil"
+          circularCrop={true}
+        />
+        <ImageCropper
+          isOpen={backgroundCropperOpen}
+          onClose={() => setBackgroundCropperOpen(false)}
+          onCropComplete={handleBackgroundCropComplete}
+          aspectRatio={16 / 9}
+          title="Recortar Imagem de Fundo"
+          circularCrop={false}
+        />
       </div>
     </div>
   );

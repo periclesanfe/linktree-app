@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import apiClient from '../api/apiClient';
 import LinkTypeSelector from './LinkTypeSelector';
+import ImageCropper from './ImageCropper';
 import type { LinkType } from './LinkTypeSelector';
 
 interface LinkMetadata {
@@ -52,6 +53,7 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
   const [error, setError] = useState('');
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [coverCropperOpen, setCoverCropperOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -77,6 +79,12 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
       setCoverImage(file);
       setCoverImagePreview(URL.createObjectURL(file));
     }
+  };
+
+  const handleCoverCropComplete = (croppedBlob: Blob) => {
+    const file = new File([croppedBlob], 'cover.jpg', { type: 'image/jpeg' });
+    setCoverImage(file);
+    setCoverImagePreview(URL.createObjectURL(croppedBlob));
   };
 
   const handleMetadataChange = (field: keyof LinkMetadata, value: string) => {
@@ -398,20 +406,16 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
                     />
                   </div>
                 )}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/*"
-                  className="hidden"
-                />
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
+                  onClick={() => setCoverCropperOpen(true)}
+                  className="w-full px-4 py-3 bg-gradient-to-r from-meuhub-primary to-meuhub-accent text-meuhub-text rounded-lg hover:from-meuhub-accent hover:to-meuhub-primary transition-all font-medium shadow-md"
                 >
                   {coverImagePreview ? 'Trocar Imagem' : 'Adicionar Imagem'}
                 </button>
+                <p className="text-xs text-gray-500 text-center">
+                  Imagem sera redimensionada para 400x400px
+                </p>
               </div>
             </div>
 
@@ -453,6 +457,16 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
           </form>
         </div>
       </div>
+
+      {/* Image Cropper Modal */}
+      <ImageCropper
+        isOpen={coverCropperOpen}
+        onClose={() => setCoverCropperOpen(false)}
+        onCropComplete={handleCoverCropComplete}
+        aspectRatio={1}
+        title="Recortar Imagem de Capa"
+        circularCrop={false}
+      />
     </div>
   );
 };

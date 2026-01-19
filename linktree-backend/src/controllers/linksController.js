@@ -2,6 +2,7 @@ const pool = require('../db/pool');
 const { validationResult } = require('express-validator');
 const logger = require('../utils/logger');
 const { formatPhone, extractYouTubeId } = require('../utils/linkUrlBuilder');
+const { handleImageUpload, deleteFromR2 } = require('../services/imageService');
 
 exports.createLink = async (req, res) => {
     const errors = validationResult(req);
@@ -65,7 +66,7 @@ exports.updateLink = async (req, res) => {
     try {
         const linkResult = await pool.query("SELECT * FROM links WHERE id = $1 AND user_id = $2", [linkId, userId]);
         if (linkResult.rows.length === 0) {
-            return res.status(404).json({ msg: 'Link não encontrado ou você não tem permissão.' });
+            return res.status(404).json({ msg: 'Link nao encontrado ou voce nao tem permissao.' });
         }
 
         const currentLink = linkResult.rows[0];
@@ -110,7 +111,13 @@ exports.deleteLink = async (req, res) => {
     try {
         const linkResult = await pool.query("SELECT * FROM links WHERE id = $1 AND user_id = $2", [linkId, userId]);
         if (linkResult.rows.length === 0) {
-            return res.status(404).json({ msg: 'Link não encontrado ou você não tem permissão.' });
+            return res.status(404).json({ msg: 'Link nao encontrado ou voce nao tem permissao.' });
+        }
+
+        // Delete cover image from R2 if exists
+        const link = linkResult.rows[0];
+        if (link.cover_image_url && !link.cover_image_url.startsWith('data:')) {
+            await deleteFromR2(link.cover_image_url);
         }
 
         await pool.query("DELETE FROM links WHERE id = $1", [linkId]);
@@ -139,16 +146,22 @@ exports.uploadLinkCoverImage = async (req, res) => {
     try {
         const linkResult = await pool.query("SELECT * FROM links WHERE id = $1 AND user_id = $2", [linkId, userId]);
         if (linkResult.rows.length === 0) {
-            return res.status(404).json({ msg: 'Link não encontrado ou você não tem permissão.' });
+            return res.status(404).json({ msg: 'Link nao encontrado ou voce nao tem permissao.' });
         }
 
-        const mimeType = req.file.mimetype;
-        const base64Data = req.file.buffer.toString('base64');
-        const dataUrl = `data:${mimeType};base64,${base64Data}`;
+        const oldUrl = linkResult.rows[0].cover_image_url;
+
+        // Process and upload to R2
+        const result = await handleImageUpload(
+            req.file,
+            'linkCover',
+            userId.toString(),
+            oldUrl
+        );
 
         const updatedLink = await pool.query(
             "UPDATE links SET cover_image_url = $1 WHERE id = $2 RETURNING *",
-            [dataUrl, linkId]
+            [result.url, linkId]
         );
 
         res.json(updatedLink.rows[0]);
@@ -157,11 +170,20 @@ exports.uploadLinkCoverImage = async (req, res) => {
         logger.error('Links error - uploadLinkCover', {
             endpoint: 'uploadLinkCover',
             userId: req.user.id,
-            linkId: req.params.id,
+            linkId: req.params.linkId,
             error: err.message,
             stack: err.stack
         });
-        res.status(500).send('Erro no servidor ao salvar a imagem do link.');
+        
+        // Check if it's a storage limit error
+        if (err.message.includes('Storage limit exceeded')) {
+            return res.status(507).json({ 
+                msg: err.message,
+                error: 'STORAGE_LIMIT_EXCEEDED'
+            });
+        }
+        
+        res.status(500).json({ msg: 'Erro no servidor ao salvar a imagem do link.' });
     }
 };
 
@@ -170,7 +192,7 @@ exports.reorderLinks = async (req, res) => {
     const userId = req.user.id;
 
     if (!links || !Array.isArray(links)) {
-        return res.status(400).json({ msg: 'Dados de reordenação inválidos.' });
+        return res.status(400).json({ msg: 'Dados de reordenacao invalidos.' });
     }
 
     try {
