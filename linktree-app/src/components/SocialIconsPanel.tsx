@@ -27,6 +27,7 @@ const SocialIconsPanel: React.FC = () => {
   // Form state
   const [platform, setPlatform] = useState(VALID_PLATFORMS[0]);
   const [url, setUrl] = useState('');
+  const [identifier, setIdentifier] = useState(''); // Username, phone, etc.
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Confirm delete modal
@@ -39,6 +40,14 @@ const SocialIconsPanel: React.FC = () => {
   useEffect(() => {
     fetchIcons();
   }, []);
+
+  // Reset identifier when platform changes
+  useEffect(() => {
+    if (!editingIcon) {
+        setIdentifier('');
+        setUrl('');
+    }
+  }, [platform, editingIcon]);
 
   const fetchIcons = async () => {
     try {
@@ -57,10 +66,24 @@ const SocialIconsPanel: React.FC = () => {
     if (icon) {
       setEditingIcon(icon);
       setPlatform(icon.platform);
-      setUrl(icon.url);
+      
+      // Tentar extrair o identificador da URL existente para edição
+      let extracted = icon.url;
+      if (['instagram', 'twitter', 'tiktok', 'github', 'pinterest', 'snapchat', 'threads', 'twitch'].includes(icon.platform)) {
+          const parts = icon.url.split('/');
+          extracted = parts[parts.length - 1].replace('@', '');
+      } else if (icon.platform === 'whatsapp') {
+          extracted = icon.url.replace('https://wa.me/', '').replace(/\D/g, '');
+      } else if (icon.platform === 'email') {
+          extracted = icon.url.replace('mailto:', '');
+      }
+      
+      setIdentifier(extracted);
+      setUrl(icon.url); // Mantém a URL original como fallback
     } else {
       setEditingIcon(null);
       setPlatform(VALID_PLATFORMS[0]);
+      setIdentifier('');
       setUrl('');
     }
     setIsModalOpen(true);
@@ -70,10 +93,43 @@ const SocialIconsPanel: React.FC = () => {
     setIsModalOpen(false);
     setEditingIcon(null);
     setUrl('');
+    setIdentifier('');
+  };
+
+  const buildFinalUrl = () => {
+      const cleanId = identifier.trim();
+      if (!cleanId) return url; // Se não tiver identificador, usa o campo URL (se houver)
+
+      switch (platform) {
+          case 'instagram': return `https://instagram.com/${cleanId.replace('@', '')}`;
+          case 'twitter': return `https://twitter.com/${cleanId.replace('@', '')}`;
+          case 'tiktok': return `https://tiktok.com/@${cleanId.replace('@', '')}`;
+          case 'facebook': return url || `https://facebook.com/${cleanId}`; // Facebook pode ser ID ou username, melhor deixar URL livre se quiser
+          case 'linkedin': return url || `https://linkedin.com/in/${cleanId}`; // LinkedIn varia
+          case 'github': return `https://github.com/${cleanId.replace('@', '')}`;
+          case 'whatsapp': return `https://wa.me/${cleanId.replace(/\D/g, '')}`;
+          case 'telegram': return `https://t.me/${cleanId.replace('@', '')}`;
+          case 'email': return `mailto:${cleanId}`;
+          case 'pinterest': return `https://pinterest.com/${cleanId.replace('@', '')}`;
+          case 'twitch': return `https://twitch.tv/${cleanId.replace('@', '')}`;
+          case 'snapchat': return `https://snapchat.com/add/${cleanId.replace('@', '')}`;
+          case 'threads': return `https://threads.net/@${cleanId.replace('@', '')}`;
+          case 'discord': return url; // Discord invite link usually
+          case 'spotify': return url; // Spotify link varies (artist, playlist, track)
+          case 'youtube': return url; // Youtube varies (channel, user, c)
+          default: return url;
+      }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const finalUrl = buildFinalUrl();
+
+    if (!finalUrl) {
+        toast.error('Preencha o campo corretamente.');
+        return;
+    }
     
     // Validar se já existe ícone dessa plataforma (apenas para criação)
     if (!editingIcon && icons.some(icon => icon.platform === platform)) {
@@ -85,11 +141,11 @@ const SocialIconsPanel: React.FC = () => {
       setIsSubmitting(true);
       
       if (editingIcon) {
-        const response = await apiClient.put(`/socials/${editingIcon.id}`, { url });
+        const response = await apiClient.put(`/socials/${editingIcon.id}`, { url: finalUrl });
         setIcons(icons.map(i => i.id === editingIcon.id ? response.data : i));
         toast.success('Ícone atualizado com sucesso!');
       } else {
-        const response = await apiClient.post('/socials', { platform, url });
+        const response = await apiClient.post('/socials', { platform, url: finalUrl });
         setIcons([...icons, response.data]);
         toast.success('Ícone adicionado com sucesso!');
       }
@@ -251,16 +307,61 @@ const SocialIconsPanel: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  URL do Perfil
+                  {['instagram', 'twitter', 'tiktok', 'github', 'pinterest', 'snapchat', 'threads', 'twitch'].includes(platform) ? 'Nome de Usuário' :
+                   platform === 'whatsapp' ? 'Número (com DDD)' :
+                   platform === 'email' ? 'Endereço de Email' :
+                   'Link Completo'}
                 </label>
-                <input
-                  type="url"
-                  required
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder={`https://${platform}.com/seu-usuario`}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-meuhub-primary focus:border-transparent outline-none"
-                />
+                
+                {['instagram', 'twitter', 'tiktok', 'github', 'pinterest', 'snapchat', 'threads', 'twitch'].includes(platform) ? (
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono">@</span>
+                        <input
+                          type="text"
+                          required
+                          value={identifier}
+                          onChange={(e) => setIdentifier(e.target.value)}
+                          placeholder="usuario"
+                          className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-meuhub-primary focus:border-transparent outline-none"
+                        />
+                    </div>
+                ) : platform === 'whatsapp' ? (
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono">+55</span>
+                        <input
+                          type="tel"
+                          required
+                          value={identifier}
+                          onChange={(e) => setIdentifier(e.target.value.replace(/\D/g, ''))}
+                          placeholder="11999999999"
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-meuhub-primary focus:border-transparent outline-none"
+                        />
+                    </div>
+                ) : platform === 'email' ? (
+                    <input
+                      type="email"
+                      required
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="contato@exemplo.com"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-meuhub-primary focus:border-transparent outline-none"
+                    />
+                ) : (
+                    <input
+                      type="url"
+                      required
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      placeholder={`https://${platform}.com/...`}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-meuhub-primary focus:border-transparent outline-none"
+                    />
+                )}
+                
+                {['instagram', 'twitter', 'tiktok'].includes(platform) && (
+                    <p className="text-xs text-gray-500 mt-1">
+                        Dica: Digite apenas seu usuário, sem o link completo.
+                    </p>
+                )}
               </div>
 
               <div className="pt-2 flex gap-3">

@@ -194,15 +194,18 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
               <label htmlFor="phone" className={labelClasses}>
                 Telefone (WhatsApp)
               </label>
-              <input
-                type="tel"
-                id="phone"
-                value={metadata.phone || ''}
-                onChange={(e) => handlePhoneChange('phone', e.target.value)}
-                className={inputClasses}
-                placeholder="(11) 99999-9999"
-                required
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-sm">+55</span>
+                <input
+                  type="tel"
+                  id="phone"
+                  value={metadata.phone || ''}
+                  onChange={(e) => handlePhoneChange('phone', e.target.value)}
+                  className={`${inputClasses} pl-10`}
+                  placeholder="(11) 99999-9999"
+                  required
+                />
+              </div>
             </div>
             <div>
               <label htmlFor="message" className={labelClasses}>
@@ -227,7 +230,7 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
               Usuario do Instagram
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">@</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-lg">@</span>
               <input
                 type="text"
                 id="username"
@@ -248,15 +251,22 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
               <label htmlFor="email" className={labelClasses}>
                 Email
               </label>
-              <input
-                type="email"
-                id="email"
-                value={metadata.email || ''}
-                onChange={(e) => handleMetadataChange('email', e.target.value)}
-                className={inputClasses}
-                placeholder="contato@exemplo.com"
-                required
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </span>
+                <input
+                  type="email"
+                  id="email"
+                  value={metadata.email || ''}
+                  onChange={(e) => handleMetadataChange('email', e.target.value)}
+                  className={`${inputClasses} pl-10`}
+                  placeholder="contato@exemplo.com"
+                  required
+                />
+              </div>
             </div>
             <div>
               <label htmlFor="subject" className={labelClasses}>
@@ -293,15 +303,18 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
             <label htmlFor="phone" className={labelClasses}>
               Numero de Telefone
             </label>
-            <input
-              type="tel"
-              id="phone"
-              value={metadata.phone || ''}
-              onChange={(e) => handlePhoneChange('phone', e.target.value)}
-              className={inputClasses}
-              placeholder="(11) 99999-9999"
-              required
-            />
+            <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-sm">+55</span>
+                <input
+                  type="tel"
+                  id="phone"
+                  value={metadata.phone || ''}
+                  onChange={(e) => handlePhoneChange('phone', e.target.value)}
+                  className={`${inputClasses} pl-10`}
+                  placeholder="(11) 99999-9999"
+                  required
+                />
+            </div>
           </div>
         );
 
@@ -311,15 +324,22 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
             <label htmlFor="url" className={labelClasses}>
               URL do Video ou Canal
             </label>
-            <input
-              type="url"
-              id="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className={inputClasses}
-              placeholder="https://youtube.com/watch?v=..."
-              required
-            />
+            <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
+                  </svg>
+                </span>
+                <input
+                  type="url"
+                  id="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  className={`${inputClasses} pl-10`}
+                  placeholder="https://youtube.com/..."
+                  required
+                />
+            </div>
             <p className="text-xs text-gray-500 mt-1">
               Cole a URL completa do video ou canal
             </p>
@@ -333,7 +353,7 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, existing
               Usuario do TikTok
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">@</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-lg">@</span>
               <input
                 type="text"
                 id="username"
