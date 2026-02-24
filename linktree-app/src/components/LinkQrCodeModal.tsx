@@ -38,7 +38,8 @@ const LinkQrCodeModal: React.FC<LinkQrCodeModalProps> = ({ isOpen, onClose, link
 
   const qrValue = useMemo(() => getRedirectUrl(link.id), [link.id]);
   const qrBgColor = transparentBg ? 'rgba(0,0,0,0)' : bgColor;
-  const hasLogo = Boolean(link.cover_image_url);
+  const logoSrc = link.cover_image_url ?? null;
+  const hasLogo = Boolean(logoSrc);
   const canvasId = `qr-canvas-${link.id}`;
 
   const handleDownload = () => {
@@ -179,9 +180,9 @@ const LinkQrCodeModal: React.FC<LinkQrCodeModalProps> = ({ isOpen, onClose, link
                 bgColor={qrBgColor}
                 includeMargin
                 imageSettings={
-                  hasLogo
+                  logoSrc
                     ? {
-                        src: link.cover_image_url || undefined,
+                        src: logoSrc,
                         height: 56,
                         width: 56,
                         excavate: true,
