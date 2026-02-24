@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
 import AnalyticsModal from './AnalyticsModal';
 import LinkTrackersModal from './LinkTrackersModal';
+import LinkQrCodeModal from './LinkQrCodeModal';
 
 interface Link {
   id: string;
@@ -24,6 +25,7 @@ const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, onDelete }) => {
   const [clickCount, setClickCount] = useState<number | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showTrackers, setShowTrackers] = useState(false);
+  const [showQrCode, setShowQrCode] = useState(false);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -98,6 +100,18 @@ const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, onDelete }) => {
                   Sublinks
                 </span>
               </button>
+
+              <button
+                onClick={() => setShowQrCode(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 rounded-lg transition-all duration-200 border border-emerald-100"
+              >
+                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm13 0h3v3h-3v-3zm-3 3h3v3h-3v-3zm3 3h3v-3h-3v3z" />
+                </svg>
+                <span className="text-sm font-semibold text-emerald-700">
+                  QR Code
+                </span>
+              </button>
             </div>
           </div>
 
@@ -133,6 +147,12 @@ const LinkCard: React.FC<LinkCardProps> = ({ link, onEdit, onDelete }) => {
         onClose={() => setShowTrackers(false)}
         linkId={link.id}
         linkTitle={link.title}
+      />
+
+      <LinkQrCodeModal
+        isOpen={showQrCode}
+        onClose={() => setShowQrCode(false)}
+        link={link}
       />
     </>
   );
