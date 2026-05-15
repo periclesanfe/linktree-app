@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db/pool');
 const logger = require('../utils/logger'); 
+const { clearAuthCookie, setAuthCookie } = require('../config/authCookie');
 
 exports.registerUser = async (req, res) => {
     const errors = validationResult(req);
@@ -115,7 +116,19 @@ exports.loginUser = async (req, res) => {
             { expiresIn: '5h' }, 
             (err, token) => {
                 if (err) throw err;
-                res.json({ token }); 
+                setAuthCookie(res, token);
+                res.json({
+                    user: {
+                        id: user.id,
+                        username: user.username,
+                        email: user.email,
+                        display_name: user.display_name,
+                        bio: user.bio,
+                        profile_image_url: user.profile_image_url,
+                        background_image_url: user.background_image_url,
+                        accent_color: user.accent_color,
+                    },
+                }); 
             }
         );
 
@@ -128,6 +141,11 @@ exports.loginUser = async (req, res) => {
         });
         res.status(500).send('Erro no servidor');
     }
+};
+
+exports.logoutUser = async (req, res) => {
+    clearAuthCookie(res);
+    res.json({ msg: 'Logout realizado com sucesso.' });
 };
 
 exports.getCurrentUser = async (req, res) => {

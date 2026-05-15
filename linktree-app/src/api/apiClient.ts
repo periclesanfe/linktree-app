@@ -6,20 +6,7 @@ const apiClient = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL !== undefined 
     ? `${import.meta.env.VITE_BACKEND_URL}/api` 
     : '/api',
+  withCredentials: true,
 });
-
-// Interceptor para adicionar o token JWT em todas as requisições
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers['x-auth-token'] = token;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 export default apiClient;

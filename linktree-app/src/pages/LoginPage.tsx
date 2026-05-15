@@ -19,7 +19,7 @@ const LoginPage = () => {
     setIsLoading(true);
     try {
       const response = await apiClient.post('/auth/login', { email, password });
-      login(response.data.token);
+      login(response.data.user);
       navigate('/admin');
     } catch (err) {
       setError('Credenciais invalidas. Tente novamente.');

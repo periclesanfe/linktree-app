@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
+const { getAuthTokenFromRequest } = require('../config/authCookie');
 
 module.exports = function(req, res, next) {
-    const token = req.header('x-auth-token');
+    const token = getAuthTokenFromRequest(req);
 
     if (!token) {
         return res.status(401).json({ msg: 'Nenhum token, autorização negada.' });

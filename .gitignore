@@ -52,6 +52,9 @@ values.*.secret.yaml
 # Temporary files
 .DS_Store
 
+# Local specs and planning notes
+.docs/
+
 # CI/CD configuration (contains sensitive paths/IPs)
 .cicd-config
 

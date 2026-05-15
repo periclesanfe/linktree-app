@@ -299,7 +299,7 @@ const AdminPage = () => {
   };
 
   // Funções existentes
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = async () => { await logout(); navigate('/login'); };
   const handleOpenModalForCreate = () => { setEditingLink(null); setIsModalOpen(true); };
   const handleOpenModalForEdit = (link: Link) => { setEditingLink(link); setIsModalOpen(true); };
   const handleCloseModal = () => { setIsModalOpen(false); setEditingLink(null); };

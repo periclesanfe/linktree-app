@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
-const { registerUser, loginUser, getCurrentUser } = require('../controllers/authController');
+const { registerUser, loginUser, logoutUser, getCurrentUser } = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 const express = require('express');
 
@@ -8,6 +8,7 @@ const router = Router();
 router.use(express.json()); 
 
 router.get('/me', authMiddleware, getCurrentUser);
+router.post('/logout', logoutUser);
 
 router.post(
     '/register',
