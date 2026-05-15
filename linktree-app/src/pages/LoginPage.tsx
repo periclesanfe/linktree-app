@@ -210,6 +210,15 @@ const LoginPage = () => {
                 'Entrar'
               )}
             </button>
+
+            <div className="text-right">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-[#E8A87C] hover:text-[#D4956B] font-medium underline-offset-4 hover:underline transition-colors duration-200"
+              >
+                Esqueci minha senha
+              </Link>
+            </div>
           </form>
 
           {/* Register Link */}

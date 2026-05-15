@@ -2,6 +2,7 @@ const pool = require('../db/pool');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 const { handleImageUpload, deleteFromR2 } = require('../services/imageService');
+const { revokeUserSessions } = require('../services/sessionService');
 
 exports.getMe = async (req, res) => {
     try {
@@ -267,11 +268,25 @@ exports.updatePassword = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const newPasswordHash = await bcrypt.hash(newPassword, salt);
 
-        // Atualiza a senha no banco
-        await pool.query(
-            "UPDATE users SET password_hash = $1 WHERE id = $2",
-            [newPasswordHash, req.user.id]
-        );
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            await client.query(
+                "UPDATE users SET password_hash = $1 WHERE id = $2",
+                [newPasswordHash, req.user.id]
+            );
+            await revokeUserSessions(
+                req.user.id,
+                { exceptSessionId: req.authSession?.id },
+                client
+            );
+            await client.query('COMMIT');
+        } catch (txError) {
+            await client.query('ROLLBACK');
+            throw txError;
+        } finally {
+            client.release();
+        }
 
         res.json({ msg: 'Senha atualizada com sucesso!' });
 

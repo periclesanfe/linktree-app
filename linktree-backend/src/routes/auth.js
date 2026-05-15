@@ -1,7 +1,16 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
-const { registerUser, loginUser, logoutUser, getCurrentUser } = require('../controllers/authController');
+const {
+    registerUser,
+    loginUser,
+    logoutUser,
+    forgotPassword,
+    verifyResetCode,
+    resetPassword,
+    getCurrentUser,
+} = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
+const passwordResetRateLimit = require('../middleware/passwordResetRateLimit');
 const express = require('express');
 
 const router = Router();
@@ -26,6 +35,29 @@ router.post(
     body('email', 'Por favor, inclua um e-mail válido').isEmail(),
     body('password', 'A senha é obrigatória').exists(),
     loginUser
+);
+
+router.post(
+    '/forgot-password',
+    passwordResetRateLimit,
+    body('email', 'Por favor, inclua um e-mail válido').isEmail(),
+    forgotPassword
+);
+
+router.post(
+    '/verify-reset-code',
+    passwordResetRateLimit,
+    body('email', 'Por favor, inclua um e-mail válido').isEmail(),
+    body('code', 'Informe o codigo de 6 digitos').isLength({ min: 6, max: 6 }).isNumeric(),
+    verifyResetCode
+);
+
+router.post(
+    '/reset-password',
+    passwordResetRateLimit,
+    body('resetToken', 'Token de recuperacao obrigatorio').isString().isLength({ min: 32 }),
+    body('password', 'A senha deve ter 6 ou mais caracteres').isLength({ min: 6 }),
+    resetPassword
 );
 
 module.exports = router;

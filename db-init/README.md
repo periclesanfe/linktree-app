@@ -6,6 +6,9 @@
 |------|-------------|
 | `001_schema.sql` | Complete database schema (tables, indexes, functions, views) |
 | `002_seed.sql` | Initial data (admin account, demo user, invite codes) |
+| `003_add_trackers.sql` | Link tracker tables and analytics relationship |
+| `004_password_reset_codes.sql` | Password reset code storage |
+| `005_user_sessions.sql` | Opaque server-side session storage |
 
 ## How It Works
 

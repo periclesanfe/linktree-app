@@ -1,20 +1,25 @@
-const jwt = require('jsonwebtoken');
-const { getAuthTokenFromRequest } = require('../config/authCookie');
+const { clearAuthCookie, getAuthSessionTokenFromRequest } = require('../config/authCookie');
+const { getValidSessionByToken } = require('../services/sessionService');
 
-module.exports = function(req, res, next) {
-    const token = getAuthTokenFromRequest(req);
+module.exports = async function(req, res, next) {
+    const token = getAuthSessionTokenFromRequest(req);
 
     if (!token) {
-        return res.status(401).json({ msg: 'Nenhum token, autorização negada.' });
+        return res.status(401).json({ msg: 'Nenhuma sessao, autorizacao negada.' });
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const session = await getValidSessionByToken(token);
+        if (!session) {
+            clearAuthCookie(res);
+            return res.status(401).json({ msg: 'Sessao invalida ou expirada.' });
+        }
 
-        req.user = decoded.user;
+        req.user = { id: session.user_id };
+        req.authSession = { id: session.id };
 
         next();
     } catch (err) {
-        res.status(401).json({ msg: 'Token não é válido.' });
+        res.status(500).json({ msg: 'Erro ao validar sessao.' });
     }
 };
